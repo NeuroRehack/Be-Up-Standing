@@ -12,8 +12,8 @@ if pgrep -f $PROGRAM_NAME > /dev/null; then
     # Get the CPU usage of the program
     CPU_USAGE=$(top -n 1 -b | grep "$PROGRAM_NAME" | head -n 1 | awk -F' ' '{print $7}' | tr -d '%')
 
-    # Check if CPU usage is lower than 50
-    if [ "$CPU_USAGE" -lt 50 ]; then
+    # Check if CPU usage is lower than 20
+    if [ "$CPU_USAGE" -lt 20 ]; then
         echo "CPU usage of $PROGRAM_NAME is below 50%: $CPU_USAGE%"
         kill -9 $(pgrep -f $PROGRAM_NAME)
         source /root/Firmware/shell_scripts/run_stand_up.sh &  
