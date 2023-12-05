@@ -1,3 +1,4 @@
+# this script is run on the omega to change the hostname and wifi name
 #!/bin/ash
 
 # Check if script is running with root privileges

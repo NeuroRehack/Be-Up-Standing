@@ -8,7 +8,7 @@ import lib.human_presence as human_presence
 from lib.PiicoDev_VL53L1X import PiicoDev_VL53L1X
 import lib.battery as battery
 from shared_resources import FILE_HEADER, DATA_DIR, CONFIG_FILE, DEVICE_ID, TEMP_DIR, stop_event, lock, device_should_record, LOG_FILE,ROOT_DIR
-# import logging
+import logging
 
 def write_data_to_file(fileName, data):
     """
@@ -143,7 +143,7 @@ def read_write_loop(rtc, status_queue, sensor_data_queue):
             graph_data = [now, distance, hp, battery_level]
             sensor_data_queue.append(graph_data)
 
-            print("{now} {distance} {hp}".format(distance=distance, hp=hp, now=now))
+            # print("{now} {distance} {hp}".format(distance=distance, hp=hp, now=now))
 
             elapsed = now - lastNewFileTime
             if elapsed > timedelta(seconds=NEW_FILE_PERIOD): # create a new file

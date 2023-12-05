@@ -15,6 +15,36 @@ from googleapiclient.http import MediaIoBaseDownload
 import hashlib
 from tqdm import tqdm
 import json
+# toast
+import win10toast
+import configparser
+from tkinter import messagebox,filedialog
+from tkinter import Tk
+import time
+from datetime import datetime, timedelta
+
+def check_download_dir(dir):
+    print(dir)
+    if not os.path.exists(dir):
+        # HIDE TKINTER WINDOW
+        root = Tk()
+        root.withdraw()
+        
+        response = messagebox.askokcancel("BeUpstanding Drive", f"Select which folder to download files to")
+        if response:
+            dir = filedialog.askdirectory()
+            dir = check_download_dir(dir)
+        else:
+            quit()
+    else:
+        config = configparser.ConfigParser()
+        config.read(CONFIG_FILE)
+        config['DEFAULT']['DOWNLOAD_FOLDER_PATH'] = dir
+        # Write the updated config file
+        with open(CONFIG_FILE, 'w') as config_file:
+            config.write(config_file)
+        return dir
+    
 
 # Define your service account credentials JSON file path
 SERVICE_ACCOUNT_CREDENTIALS = 'credentials.json'
@@ -25,18 +55,52 @@ credentials = service_account.Credentials.from_service_account_file(
 )
 drive_service = build('drive', 'v3', credentials=credentials)
 
-# Define the base directory where you want to save downloaded files
-BASE_DOWNLOAD_DIR = 'DriveData'
+CONFIG_FILE = "drive_settings.ini"
+config = configparser.ConfigParser()
+config.read(CONFIG_FILE)
 
-# Function to download files recursively
-def download_folder_contents(folder_id, parent_dir):
+# Define the base directory where you want to save downloaded files
+download_dir = check_download_dir(config['DEFAULT']['DOWNLOAD_FOLDER_PATH'])
+print(download_dir)
+
+    
+    
+def get_files_in_folder(folder_id):
     results = drive_service.files().list(
         q=f"'{folder_id}' in parents",
         fields="files(id, name, mimeType)").execute()
     files = results.get('files', [])
+    return files
+
+def download_file(file_id, file_name, parent_dir):
+    downloaded_file_path = os.path.join(parent_dir, file_name)
+    request = drive_service.files().get_media(fileId=file_id)
+    with open(downloaded_file_path, 'wb') as file:
+        download_request = MediaIoBaseDownload(
+            file, request
+        )
+        done = False
+        while not done:
+            status, done = download_request.next_chunk()
+    print(f"File '{file_name}' downloaded successfully.")
+
+def check_file(file_id, file_name, parent_dir):
+    expected_md5 = drive_service.files().get(fileId=file_id, fields="md5Checksum").execute()['md5Checksum']
+    downloaded_file_path = os.path.join(parent_dir, file_name)
+    with open(downloaded_file_path, 'rb') as downloaded_file:
+        md5 = hashlib.md5(downloaded_file.read()).hexdigest()
+    if md5 == expected_md5:
+        return True
+    else:
+        return False
+    
+# Function to download files recursively
+def download_folder_contents(folder_id, parent_dir):
+    files = get_files_in_folder(folder_id)
     if not files and folder_id != 'root':
         # The folder is empty: delete it from Google Drive
         drive_service.files().delete(fileId=folder_id).execute()
+        print(f"Folder '{parent_dir}' is empty. Deleting from Google Drive.")
     for file in files:
         file_id = file['id']
         file_name = file['name']
@@ -56,30 +120,18 @@ def download_folder_contents(folder_id, parent_dir):
                 drive_service.files().delete(fileId=file_id).execute()
             else:
                 # Download and verify the file
-                downloaded_file_path = os.path.join(parent_dir, file_name)
-                request = drive_service.files().get_media(fileId=file_id)
-                with open(downloaded_file_path, 'wb') as file:
-                    download_request = MediaIoBaseDownload(
-                        file, request
-                    )
-                    done = False
-                    while not done:
-                        status, done = download_request.next_chunk()
-                print(f"File '{file_name}' downloaded successfully.")
+                download_file(file_id, file_name, parent_dir)
                     
                 # Verify the downloaded file using MD5 hash (you can use other hash algorithms)
-                expected_md5 = drive_service.files().get(fileId=file_id, fields="md5Checksum").execute()['md5Checksum']
-                downloaded_file_path = os.path.join(parent_dir, file_name)
-                with open(downloaded_file_path, 'rb') as downloaded_file:
-                    md5 = hashlib.md5(downloaded_file.read()).hexdigest()
-                if md5 == expected_md5:
+                file_good = check_file(file_id, file_name, parent_dir)
+                if file_good:
                     print(f"File '{file_name}' hash matches.")
                     #delete file from google drive
                     drive_service.files().delete(fileId=file_id).execute()
                 else:
                     print(f"File '{file_name}' hash does not match")
                     #delete local file
-                    os.remove(downloaded_file_path)
+                    os.remove(os.path.join(parent_dir, file_name))
 
 def list_all_files():
     results = drive_service.files().list(
@@ -150,16 +202,36 @@ def delete_all_files():
             print(f"File '{file['name']}' deleted successfully.")
 
 if __name__ == '__main__':
-    # # Start downloading from the root folder
-    download_folder_contents('root', BASE_DOWNLOAD_DIR)
-
-    print("All files and folders downloaded, verified, and cloned from Google Drive.")
+    folder_struct =  list_folder_structure(drive_service)
+    pretty_print_folder_structure(folder_struct)
+    # while len(folder_struct) > 0:
+    #     # print(folder_struct)
+    #     pretty_print_folder_structure(folder_struct)
+        
+    #     # Start downloading from the root folder
+    #     download_folder_contents('root', download_dir)
+    #     folder_struct =  list_folder_structure(drive_service)
     
-    # # # downloaded_file_path = 'DriveData\\A4A5\\data\\SKA03\\231005\\SKA03_231005_20244.csv'
-    # # # downloaded_size = os.path.getsize(downloaded_file_path)
-    # # # print(downloaded_size)
-    # # delete_all_files()
-    # folder_struct =  list_folder_structure(drive_service)
-    # print(folder_struct)
-    # pretty_print_folder_structure(folder_struct)
+    # lastDownload = datetime.now() - timedelta(days=1)
+
+    # while 1:
+    #     print(f"last download: {lastDownload} next download: {lastDownload + timedelta(days=1)}")
+    #     # check if last attempt was more than 24h ago
+    #     if (datetime.now() - lastDownload).total_seconds() > 86400:
+    #         folder_struct =  list_folder_structure(drive_service)
+    #         # print(folder_struct)
+    #         pretty_print_folder_structure(folder_struct)
+            
+    #         # Start downloading from the root folder
+    #         download_folder_contents('root', download_dir)
+
+    #         lastDownload = datetime.now()
+    #     time.sleep(60*5)
+
+    # # print("All files and folders downloaded, verified, and cloned from Google Drive.")
+    
+    # # # # downloaded_file_path = 'DriveData\\A4A5\\data\\SKA03\\231005\\SKA03_231005_20244.csv'
+    # # # # downloaded_size = os.path.getsize(downloaded_file_path)
+    # # # # print(downloaded_size)
+    # # # delete_all_files()
 

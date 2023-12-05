@@ -1,3 +1,5 @@
+# this script is used to set up the Omega2+ for the first time and install all the required packages
+
 #!/bin/ash
 
 # Check if script is running with root privileges

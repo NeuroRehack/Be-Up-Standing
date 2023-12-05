@@ -1,3 +1,5 @@
+# NOT IN USE
+
 # check for internet connection
 if ping -c 1 8.8.8.8 > /dev/null 2>&1; then
     kill -9 $(pgrep -f main)

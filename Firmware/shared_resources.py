@@ -15,7 +15,7 @@ DATA_DIR = "data"
 FILE_HEADER = ["Date time", "Distance(mm)", "Human Present"]
 CONFIG_FILE = "config.ini"
 LOG_FILE = "/root/Firmware/logs/standup.log"
-DEVICE_ID ='A17E'
+DEVICE_ID ='A17E' # this is the device ID of the device !- hardcoded for now
 
 def device_should_record(WAKE_AT, SLEEP_AT, rtc):
     """

@@ -1,3 +1,5 @@
+# NOT IN USE
+
 #!/bin/ash
 source /root/Firmware/venv/bin/activate
 
