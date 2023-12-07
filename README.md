@@ -61,3 +61,6 @@ You can find instructions on how to set up a google drive api [here](https://dev
 Since we are using a headless device it is not possible for us to generate tokens which are necessary when using a normal google account and require a webbrowser based authentification which we cannot perform. For this reason make sure to link a google service account to the project.
 Once you have generated the credentials file, copy it to the Firmware folder on the Omega2 Pro and rename it "credentials.json". You will also need it for accessing the google drive using the drive_cloner.py script from your computer.
 
+# Software
+There are to main scripts that are of use, the drive_cloner_ui.py script and and the drive_ui.py script. The drive_cloner_ui.py script is used to automatically clone the data from the google drive to your computer. After running it it the google drive should be empty and all the data locally stored in the chosen directory.  
+The drive_ui.py script can be used to visualise the data in the google drive and allows the user to download or delete data
