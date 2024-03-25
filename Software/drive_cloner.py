@@ -16,11 +16,9 @@ import hashlib
 from tqdm import tqdm
 import json
 # toast
-import win10toast
 import configparser
 from tkinter import messagebox,filedialog
 from tkinter import Tk
-import time
 from datetime import datetime, timedelta
 
 def check_download_dir(dir):
@@ -46,22 +44,6 @@ def check_download_dir(dir):
         return dir
     
 
-# Define your service account credentials JSON file path
-SERVICE_ACCOUNT_CREDENTIALS = 'credentials.json'
-
-# Initialize the Google Drive API client
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_CREDENTIALS, scopes=['https://www.googleapis.com/auth/drive']
-)
-drive_service = build('drive', 'v3', credentials=credentials)
-
-CONFIG_FILE = "drive_settings.ini"
-config = configparser.ConfigParser()
-config.read(CONFIG_FILE)
-
-# Define the base directory where you want to save downloaded files
-download_dir = check_download_dir(config['DEFAULT']['DOWNLOAD_FOLDER_PATH'])
-print(download_dir)
 
     
     
@@ -115,7 +97,7 @@ def download_folder_contents(folder_id, parent_dir):
         else:
             # check if the file already exists
             if os.path.exists(os.path.join(parent_dir, file_name)):
-                print(f"File '{file_name}' already exists. Skipping.")
+                print(f"File '{file_name}' already exists. Deleting.")
                 #delete file from google drive
                 drive_service.files().delete(fileId=file_id).execute()
             else:
@@ -202,16 +184,37 @@ def delete_all_files():
             print(f"File '{file['name']}' deleted successfully.")
 
 if __name__ == '__main__':
+    # Define your service account credentials JSON file path
+    SERVICE_ACCOUNT_CREDENTIALS = 'credentials.json'
+
+    # Initialize the Google Drive API client
+    credentials = service_account.Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_CREDENTIALS, scopes=['https://www.googleapis.com/auth/drive']
+    )
+    drive_service = build('drive', 'v3', credentials=credentials)
+
+    CONFIG_FILE = "drive_settings.ini"
+    config = configparser.ConfigParser()
+    config.read(CONFIG_FILE)
+
+    # Define the base directory where you want to save downloaded files
+    download_dir = check_download_dir(config['DEFAULT']['DOWNLOAD_FOLDER_PATH'])
+    print(download_dir)
+    
     folder_struct =  list_folder_structure(drive_service)
     pretty_print_folder_structure(folder_struct)
-    # while len(folder_struct) > 0:
-    #     # print(folder_struct)
-    #     pretty_print_folder_structure(folder_struct)
-        
-    #     # Start downloading from the root folder
-    #     download_folder_contents('root', download_dir)
-    #     folder_struct =  list_folder_structure(drive_service)
-    
+    print(len(folder_struct))
+    while len(folder_struct) > 0:
+        try:
+            # print(folder_struct)
+            pretty_print_folder_structure(folder_struct)
+            
+            # Start downloading from the root folder
+            download_folder_contents('root', download_dir)
+            folder_struct =  list_folder_structure(drive_service)
+        except Exception as e:
+            print(e)
+            continue    
     # lastDownload = datetime.now() - timedelta(days=1)
 
     # while 1:
