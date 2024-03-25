@@ -11,8 +11,6 @@ This project utilises a Omega2 Pro to read data from a human presence sensor and
 - [LiPo battery 3.7V 1100mAh](https://core-electronics.com.au/polymer-lithium-ion-battery-1000mah-38458.html)
 - Jumper wires
 - USB A to micro USB cable
-  
-
 
 # Wiring schematic
 <!--embed image center a resized with original ratio: Documentation/Wiring_Diagram.png-->
@@ -27,7 +25,9 @@ The device requires internet access in order to install the necessary packages.
 ```sh
 wifisetup add -ssid <ssid> -encr psk2 -password <password>
 ```
-
+```sh
+wifisetup add -ssid BadLuck -encr psk2 -password trc5X2pl52X51
+```
 Replace ssid and password with the name and password of your wifi network.
 You should now have internet access, which you can verify by pinging a website:
 
@@ -41,11 +41,11 @@ opkg update && opkg install git git-http ca-bundle
 ```
 We can now install the necessary Omega2 and python packages. Clone the Firmware folder in the repository from the root folder:
 ```sh
-git clone --depth 1 --filter=blob:none git@github.com:NeuroRehack/Be-Up-Standing.git && mv ./Be-Up-Standing/Firmware . && rm -r Be-Up-Standing
+cd /root && git clone --depth 1 --filter=blob:none https://github.com/NeuroRehack/RADOM.git && mv ./RADOM/Firmware . && rm -r RADOM
 ```
 then navigate to the Firmware folder and run the setup script:
 ```sh
-cd Firmware && source ./shell_scripts/set_up.sh
+cd /root/Firmware && source /root/Firmware/shell_scripts/set_up.sh
 ```
 this script will install the necessary packages and set up the Omega2 to run the program on startup.  
 Next run the omega_rename script:
