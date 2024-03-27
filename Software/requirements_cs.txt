@@ -5,7 +5,6 @@ google-auth-oauthlib
 pyserial
 requests
 smbus2
-PySide2
 pytz
 dash
 paramiko
