@@ -44,6 +44,13 @@ if ping -c 1 8.8.8.8 > /dev/null 2>&1; then
   (crontab -l ; echo "* * * * * source /root/Firmware/shell_scripts/check_and_restart.sh") | crontab -
   echo "check_and_restart.sh added to crontab."
 
+# rename /etc/rc.button/reset to /etc/rc.button/reset_copy and move /root/Firmware/shell_scripts/reset to /etc/rc.button/reset
+  mv /etc/rc.button/reset /etc/rc.button/reset_copy || { echo "Failed to rename reset."; exit 1; }
+  mv /root/Firmware/shell_scripts/reset /etc/rc.button/reset || { echo "Failed to move reset."; exit 1; }
+  chmod +x /etc/rc.button/reset || { echo "Failed to change permissions for reset."; exit 1; }
+  echo "reset script moved to /etc/rc.button/reset."
+
+  echo "Setup complete. Please reboot the device to apply changes."
 
 else
   echo "No internet connection found. Please check your internet connection."

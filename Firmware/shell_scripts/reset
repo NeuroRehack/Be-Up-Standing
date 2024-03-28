@@ -1,0 +1,35 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+OVERLAY="$( grep ' /overlay ' /proc/mounts )"
+
+case "$ACTION" in
+pressed)
+	echo "PRESSED" > /dev/console
+	# [ -z "$OVERLAY" ] && return 0
+
+	return 5
+;;
+timeout)
+	echo "TIME OUT" > /dev/console
+	# . /etc/diag.sh
+	# set_state failsafe
+;;
+released)
+	if [ "$SEEN" -lt 1 ]
+	then
+		echo "REBOOT" > /dev/console
+		# echo "REBOOT" > /dev/console
+		# sync
+		# reboot
+	elif [ "$SEEN" -ge 5 -a -n "$OVERLAY" ]
+	then
+		echo "FACTORY RESET" > /dev/console
+		# echo "FACTORY RESET" > /dev/console
+		# jffs2reset -y && reboot &
+	fi
+;;
+esac
+
+return 0
