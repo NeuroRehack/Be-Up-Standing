@@ -56,7 +56,7 @@ def get_session_file_paths(fileList):
         # get the patient id from the file name
         patient_id = base_name.split("_")[1]
         device_id = base_name.split("_")[0]
-        session_id = f"{device_id}_{patient_id}"
+        session_id = f"{patient_id}_{device_id}"
         if session_id not in session_files:
             session_files[session_id] = []
         session_files[session_id].append(file)
