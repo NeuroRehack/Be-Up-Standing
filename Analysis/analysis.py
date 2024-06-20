@@ -194,7 +194,6 @@ def compute_sitting_and_standing(data_frame):
     data_frame = data_frame.copy()
     # create a new column 'Standing' that is True if 'Distance(mm)' is greater than the threshold for that date
     data_frame['Standing'] = np.where(data_frame['Distance(mm)'] > data_frame['Threshold'], True, False)
-    
     return data_frame
 
 def get_sitting_and_standing_percentage(data_frame):
@@ -233,27 +232,37 @@ def compute_sit_stand_transitions(data_frame):
         dict: A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
     """
     og_data_frame = data_frame.copy()
-    # filter data frame to only include rows where 'Human Present' is True
-    data_frame = data_frame[data_frame['Human Present'] == True].copy()
-    # add a new column 'Date' that is the date part of 'Date time'
-    # data_frame['Date'] = data_frame['Date time'].dt.date
     # sort the data frame by 'Date time'
     data_frame = data_frame.sort_values('Date time')
-    # add a new column 'Transition' that is True if 'Standing' has changed compared to the previous row
-    data_frame['TransitionToUP'] = (data_frame['Standing'].ne(data_frame['Standing'].shift())) & (data_frame['Standing'] == True)   
-    data_frame['TransitionToDown'] = (data_frame['Standing'].ne(data_frame['Standing'].shift())) & (data_frame['Standing'] == False) 
+    # group by date and apply transition computation to each group
+    data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(compute_daily_sit_stand_transitions).reset_index(drop=True)
     # merge og_data_frame with data_frame to get the original data frame with the new columns
-    data_frame = pd.merge(og_data_frame, data_frame[['Date time', 'TransitionToUP', 'TransitionToDown']], on='Date time', how='left')
+    # data_frame = pd.merge(og_data_frame, data_frame[['Date time', 'TransitionToUP', 'TransitionToDown']], on='Date time', how='left')
     # set the new columns to False if they are NaN
     data_frame['TransitionToUP'] = data_frame['TransitionToUP'].fillna(False)
     data_frame['TransitionToDown'] = data_frame['TransitionToDown'].fillna(False)
-    #set the first row to False because there is no previous row to compare to
-    data_frame.loc[0, 'TransitionToUP'] = False
-    data_frame.loc[0, 'TransitionToDown'] = False
-        # merge absent to present and present to absent transitions
+    # merge absent to present and present to absent transitions
     data_frame['HeightTransition'] = data_frame['TransitionToUP'] | data_frame['TransitionToDown']  
-   
+    
     return data_frame
+
+def compute_daily_sit_stand_transitions(data_frame):
+    """Summary: This function computes the sit to stand transitions and stand to sit transitions in a group of data
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the transitions from
+
+    Returns:
+        pandas.DataFrame: The data frame with the new columns 'TransitionToUP' and 'TransitionToDown'
+    """
+    copied_dt = data_frame.copy()
+    # add a new column 'Transition' that is True if 'Standing' has changed compared to the previous row
+    copied_dt['TransitionToUP'] = (copied_dt['Standing'].ne(copied_dt['Standing'].shift())) & (copied_dt['Standing'] == True)   
+    copied_dt['TransitionToDown'] = (copied_dt['Standing'].ne(copied_dt['Standing'].shift())) & (copied_dt['Standing'] == False) 
+    # set the first row to False because there is no previous row to compare to
+    copied_dt.loc[copied_dt.index[0], 'TransitionToUP'] = False
+    copied_dt.loc[copied_dt.index[0], 'TransitionToDown'] = False
+    return copied_dt.reset_index(drop=True)
 
 def get_sit_stand_transitions(data_frame):
         #return dictionary of transitions {"TransitionToUP": [datetime], "TransitionToDown": [datetime]}
@@ -265,31 +274,47 @@ def get_sit_stand_transitions(data_frame):
     return transitions
 
 def filter_transitions(transitions, minDuration, transitionName1, transitionName2):
-    # an up transition must be followed by a down transition and vice versa
-    transitionToUpList = transitions[transitionName1]
-    transitionsToDownList = transitions[transitionName2]
-    if len(transitionToUpList) < 1 or len(transitionsToDownList) < 1:
-        return transitions 
-    transitionToUpList.sort()
-    transitionsToDownList.sort()
-    newUpList = []
-    newDownList = []
-    if transitionsToDownList[0] < transitionToUpList[0]:
-        for i in range(len(transitionsToDownList)):
-            if i < len(transitionToUpList):
-                if  transitionToUpList[i] - transitionsToDownList[i] > timedelta(seconds=minDuration):
-                    newUpList.append(transitionToUpList[i])
-                    newDownList.append(transitionsToDownList[i])
-                    
-    else:
-        for i in range(len(transitionToUpList)):
-            if i < len(transitionsToDownList):
-                if transitionsToDownList[i] - transitionToUpList[i] > timedelta(seconds=minDuration):
-                    newUpList.append(transitionToUpList[i])
-                    newDownList.append(transitionsToDownList[i])
-    
+    # filter transitions that are less than minDuration seconds
+    #transition = {transitionName1: [datetime], transitionName2: [datetime]}
+    # convert to {datetime: transitionName}
+    transition = {}
+    for dateTime in transitions[transitionName1]:
+        transition[dateTime] = transitionName1
+    for dateTime in transitions[transitionName2]:
+        transition[dateTime] = transitionName2
+    # sort the dictionary by date time
+    transition = dict(sorted(transition.items()))
+    dateTimes = list(transition.keys())
+    # pair the datetimes together [1,2,3,4,5,6,7,8,9,10] -> [(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10)]
+    datePairs = [(dateTimes[i], dateTimes[i+1]) for i in range(len(dateTimes)-1)]
+    # filter the pairs that are less than minDuration seconds. if a pair is less than minDuration seconds, merge the pair with the 2 adjacent pairs
+    GoodPairs = []
+    BadPairs = []
+    for i, pair in enumerate(datePairs):
+        if (pair[1] - pair[0]).total_seconds() < minDuration:
+            BadPairs.append(pair)            
+        else:
+            GoodPairs.append(pair)
+    goodList = []
+    for pair in GoodPairs:
+        goodList.append(pair[0])
+        goodList.append(pair[1])
+    badList = []
+    for pair in BadPairs:
+        badList.append(pair[0])
+        badList.append(pair[1])
+    dateList = []
+    for dateTime in goodList:
+        if dateTime not in badList and dateTime not in dateList:
+            dateList.append(dateTime)
+            
+    newTransition = {transitionName1: [], transitionName2: []}
+    for dateTime in dateList:
+        key = transition[dateTime]
+        value = dateTime
+        newTransition[key].append(value)
         
-    return {transitionName1: newUpList, transitionName2: newDownList}
+    return newTransition
 
 def compute_daily_threshold(data_frame, minDistance = 200):
     """Summary: This function computes the daily threshold for each date in the data frame
@@ -378,46 +403,132 @@ def get_num_of_daily_transition(transitions):
 
 def compute_present_to_absent_transitions(data_frame):
     data_frame = data_frame.copy()
+    boolCols = data_frame.select_dtypes(include=[bool]).columns
+    # group dataframe by date
+    #print(data_frame[data_frame.isnull().any(axis=1)])
+    data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(compute_present_to_absent)
+    #print(data_frame[data_frame.isnull().any(axis=1)])
+    data_frame.loc[data_frame.index[0], 'AbsentToPresent'] = True
+    # set the last row to True
+    data_frame.loc[data_frame.index[-1], 'PresentToAbsent'] = True
+    # reset index
+    data_frame = data_frame.reset_index(drop=True)
+    # create  a PresenceTransition column
+    data_frame['PresenceTransition'] = data_frame['PresentToAbsent'] | data_frame['AbsentToPresent']
+    # convert boolean columns to boolean
+    data_frame[boolCols] = data_frame[boolCols].astype('bool')
+    return data_frame
+
+def compute_present_to_absent(data_frame):
+    data_frame = data_frame.copy()
     # add a new column 'PresentToAbsent' that is True if 'Human Present' has changed compared to the previous row
     data_frame['PresentToAbsent'] = (data_frame['Human Present'].ne(data_frame['Human Present'].shift())) & (data_frame['Human Present'] == False)
     data_frame['AbsentToPresent'] = (data_frame['Human Present'].ne(data_frame['Human Present'].shift())) & (data_frame['Human Present'] == True)
-    data_frame.loc[0, 'PresentToAbsent'] = False
-    data_frame.loc[0, 'AbsentToPresent'] = False
-    data_frame['PresenceTransition'] = data_frame['PresentToAbsent'] | data_frame['AbsentToPresent']    
+    # set the first row to False because there is no previous row to compare to
+    data_frame.loc[data_frame.index[0], 'PresentToAbsent'] = False
+    data_frame.loc[data_frame.index[0], 'AbsentToPresent'] = True
+    # set the last row to True
+    data_frame.loc[data_frame.index[-1], 'PresentToAbsent'] = True
     
-    return data_frame
+    return data_frame.reset_index(drop=True)
 
-def compute_bouts(data_frame):
-    # a bout is a period of time where the person is either sitting or standing
-    # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present or vice versa
-    # a bout ends when the person changes from sitting to standing or vice versa or when the person is absent and becomes present or vice versa
-    data_frame = data_frame.copy()
-  
-    # add a new column 'Bout' that is True if 'PresentToAbsent' or 'AbsentToPresent' or 'TransitionToUP' or 'TransitionToDown' is True
-    data_frame['Bout'] = data_frame['PresenceTransition'] | data_frame['HeightTransition']
-    data_frame['Bout'] = data_frame['Bout'].cumsum() # assign a unique number to each bout
-    # merge bouts that are less than minDuration seconds
+
+def compute_bouts(transition, presenceTransition):
+    # a bout is a period of time where the person is either sitting or standing and is present
+    # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present
+    # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
+    # create a dictionarry {datetime: "TransitionToUP" or "TransitionToDown" or "PresentToAbsent" or "AbsentToPresent"}
+    transitionDict = {}
+    for dateTime in transition["TransitionToUP"]:
+        transitionDict[dateTime] = "TransitionToUP"
+    for dateTime in transition["TransitionToDown"]:
+        transitionDict[dateTime] = "TransitionToDown"
+    for dateTime in presenceTransition["PresentToAbsent"]:
+        transitionDict[dateTime] = "PresentToAbsent"
+    for dateTime in presenceTransition["AbsentToPresent"]:
+        transitionDict[dateTime] = "AbsentToPresent"
+    # sort the dictionary by date time
+    transitionDict = dict(sorted(transitionDict.items()))
+    bout = {"Standing": [], "Sitting": []} # {Sitting: [(start, end),...], Standing: [(start, end),...]}
+    present=False
+    standing = False
+    dateTimes = list(transitionDict.keys())
+    transitionTypes = list(transitionDict.values())
+    i = 0
+    for dateTime, transition in transitionDict.items():
+        #next dateTime
+        if i < len(dateTimes)-1:
+            nextDateTime = dateTimes[i+1]
+        if transition == "PresentToAbsent":
+            present = False
+        elif transition == "AbsentToPresent":
+            present = True
+        elif transition == "TransitionToUP":
+            standing = True
+        elif transition == "TransitionToDown":
+            standing = False
+        if present:
+            if standing:
+                start = dateTime
+                end  = nextDateTime
+                bout["Standing"].append((start, end))
+            else:
+                start = dateTime
+                end  = nextDateTime
+                bout["Sitting"].append((start, end))
+        i += 1
+    return bout
+                
+            
+
+def compute_daily_bouts(data_frame, transitionDict):
+    #set first row to True
+    data_frame.loc[data_frame.index[0], 'Bout'] = True
+    # for dateTime in transitionDict set bout to True
+    for dateTime, transition in transitionDict.items():
+        data_frame.loc[data_frame['Date time'] == dateTime, 'Bout'] = True
     return data_frame
-    
+        
+        
+        
      
 
-def get_present_to_absent_transitions(data_frame):
+def get_present_to_absent_transitions(data_frame, minDuration = 60):
     #return list of datetime of transitions
     presentToAbsentList = data_frame[data_frame['PresentToAbsent'] == True]['Date time'].tolist()
     absentToPresentList = data_frame[data_frame['AbsentToPresent'] == True]['Date time'].tolist()
+    # sort the lists by date time
+    presentToAbsentList.sort()
+    absentToPresentList.sort()
+    # if first absent to present is earlier than first present to absent, remove the first absent to present
+    if len(absentToPresentList) > 0 and len(presentToAbsentList) > 0 and absentToPresentList[0] < presentToAbsentList[0]:
+        absentToPresentList = absentToPresentList[1:]
+    #pair the lists together -> [(present1, absent1), (present2, absent2), (present3, absent3)]
+    presenceTransition = []
+    for i in range(min(len(presentToAbsentList), len(absentToPresentList))):
+        presenceTransition.append((presentToAbsentList[i], absentToPresentList[i]))
+    # remove pair that are less than minDuration seconds
+    presenceTransition = [pair for pair in presenceTransition if (pair[1] - pair[0]).total_seconds() >= minDuration]
+    presentToAbsentList = [pair[0] for pair in presenceTransition]
+    absentToPresentList = [pair[1] for pair in presenceTransition]
     return {"PresentToAbsent": presentToAbsentList, "AbsentToPresent": absentToPresentList}
 
 
 
 
-def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays):
+def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays, bouts):
     summaryData =  pd.DataFrame()   
     # add Date,Transitions,Standing as columns
     summaryData['Transitions'] = np.nan
-    summaryData['Standing'] = np.nan    
+    summaryData['Standing %'] = np.nan    
     summaryData['Start time'] = np.nan
     summaryData['End time'] = np.nan
     summaryData['Work hours'] = np.nan
+    summaryData['Number Sitting Bouts 30min or more'] = np.nan
+    summaryData['Number Standing Bouts 40min or more'] = np.nan
+    summaryData['Average Sitting Bout Duration'] = np.nan
+    summaryData['Average Standing Bout Duration'] = np.nan
+    
         
     for date, numTransitions in dailyTransitions.items():
         # add the number of transitions to the summary data
@@ -425,7 +536,7 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
     
     for date, row in percStanding.items():
         # add the percentage of time spent standing to the summary data
-        summaryData.loc[date, 'Standing'] = row[1]*100
+        summaryData.loc[date, 'Standing %'] = row[1]*100
     
     for date, workDay in workDays.items():
         # add the start and end times of the workday to the summary data
@@ -435,10 +546,59 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
         #convert to time form HH:MM:SS
         summaryData.loc[date, 'Work hours'] = timedelta(seconds=workHours)
         
+    # organise bouts by day {{Sitting: [(start, end),...], Standing: [(start, end),...]}} -> {date: {Sitting: [(start, end),...], Standing: [(start, end),...]}}
+    dailyBouts = {}
+    for boutsType, boutsList in bouts.items():
+        for start, end in boutsList:
+            date = start.date()
+            if date not in dailyBouts:
+                dailyBouts[date] = {"Sitting": [], "Standing": []}
+            dailyBouts[date][boutsType].append((start, end))
+    # number of sitting bouts 
+   # compute the average duration of sitting bouts for each day
+    for date, bouts in dailyBouts.items():
+        cumDurationSitting = 0
+        nbSittingBouts = len(bouts["Sitting"])
+        nbSittingBoutsMoreThan30 = 0
+        for start, end in bouts["Sitting"]:
+            cumDurationSitting += (end - start).total_seconds()
+            if (end - start).total_seconds() >= 1800:
+                nbSittingBoutsMoreThan30 += 1
+        if nbSittingBouts > 0:
+            avgDurationSitting = cumDurationSitting/nbSittingBouts
+        else:
+            avgDurationSitting = 0
+        # format average duration of sitting bouts to HH:MM:SS
+        
+        summaryData.loc[date, 'Average Sitting Bout Duration'] = timedelta(seconds=avgDurationSitting)    
+        summaryData.loc[date, 'Number Sitting Bouts 30min or more'] = nbSittingBoutsMoreThan30
+        cumDurationStanding = 0
+        nbStandingBouts = len(bouts["Standing"])
+        nbStandingBoutsMoreThan40 = 0
+        for start, end in bouts["Standing"]:
+            cumDurationStanding += (end - start).total_seconds()
+            if (end - start).total_seconds() >= 2400:
+                nbStandingBoutsMoreThan40 += 1
+        if nbStandingBouts > 0:
+            avgDurationStanding = cumDurationStanding/nbStandingBouts
+        else:
+            avgDurationStanding = 0
+        summaryData.loc[date, 'Average Standing Bout Duration'] = timedelta(seconds=avgDurationStanding)
+        summaryData.loc[date, 'Number Standing Bouts 40min or more'] = nbStandingBoutsMoreThan40
+            
+    
+    
+        
     
     # add missing dates to the summary data and fill with NaN
     # if transition number is Nan set standing to nan
-    summaryData.loc[summaryData['Transitions'].isna(), 'Standing'] = "NA"
+    summaryData.loc[summaryData['Transitions'].isna(), 'Standing %'] = "NA"
+    # if transition number is Nan set bout to nan
+    summaryData.loc[summaryData['Transitions'].isna(), 'Number Sitting Bouts 30min or more'] = "NA"
+    summaryData.loc[summaryData['Transitions'].isna(), 'Number Standing Bouts 40min or more'] = "NA"
+    summaryData.loc[summaryData['Transitions'].isna(), 'Average Sitting Bout Duration'] = "NA"
+    summaryData.loc[summaryData['Transitions'].isna(), 'Average Standing Bout Duration'] = "NA"
+    
     summaryData.loc[summaryData['Transitions'].isna(), 'Transitions'] = 0
     allDates = pd.date_range(start=summaryData.index.min(), end=summaryData.index.max())
     summaryData = summaryData.reindex(allDates)
@@ -451,25 +611,28 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
     # #write summary data to csv
     outputPath = os.path.join(output_dir, f"summary_{name}.csv")
     summaryData.to_csv(outputPath, index=False)
+    #print(f"Summary data saved to {outputPath}")
     
     
 def get_bouts(data_frame):
-    # remove bouts smaller than 1 minute
-    data_frame = data_frame.groupby('Bout').filter(lambda x: x['Date time'].count() > 1)
-    # get bouts where bouts = {boutNumber: (start time, end time, durationSUM,durationDiff, sitting/standing, present/absent)}
-    bouts = {}
-    for boutNumber, bout in data_frame.groupby('Bout'):
-        start_time = bout['Date time'].min()
-        end_time = bout['Date time'].max()
-        # duration in seconds as the sum of diff between adjacent date time where human present is true
-        durationSum = bout[bout['Human Present'] == True]['Date time'].diff().dt.total_seconds().sum()
-        durationDiff = (end_time - start_time).total_seconds() # duration in seconds as the difference between the start and end time
-        diffBetween = durationDiff - durationSum
-        #standing is true if any of the standing values is true
-        standing = bout['Standing'].any()
-        present = bout['Human Present'].any()
-        bouts[boutNumber] = (start_time, end_time, durationSum, durationDiff, standing, present, diffBetween)
+    # a bout is a period of time where the person is either sitting or standing and is present
+    # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present 
+    # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
+
+    data_frame = data_frame.copy()
+    data_frame = data_frame[data_frame['Bout'] == True]
+    data_frame = data_frame[data_frame['Human Present'] == True]
+    # create a dictionary of bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
+    bouts = {"SittingPresent": [], "StandingPresent": []}
+
+
     return bouts
+
+    
+    
+    
+        
+        
 
 
 if __name__ == "__main__":
@@ -489,28 +652,29 @@ if __name__ == "__main__":
     data_frame = compute_sitting_and_standing(data_frame)
     data_frame = compute_sit_stand_transitions(data_frame)
     data_frame = compute_present_to_absent_transitions(data_frame)
-    data_frame = compute_bouts(data_frame)
     
-    print(data_frame.head())
+    # print(data_frame.head())
 
     total_duration = get_data_duration(data_frame)
     percStanding = get_sitting_and_standing_percentage(data_frame)
     transition = get_sit_stand_transitions(data_frame)
     transition = filter_transitions(transition, minDuration=120, transitionName1="TransitionToUP", transitionName2="TransitionToDown")
-    presenceTransition = get_present_to_absent_transitions(data_frame)
-    presenceTransition = filter_transitions(presenceTransition , minDuration=60, transitionName1="AbsentToPresent", transitionName2="PresentToAbsent")
+    presenceTransition = get_present_to_absent_transitions(data_frame, minDuration=60)
+    # presenceTransition = filter_transitions(presenceTransition , minDuration=60, transitionName1="AbsentToPresent", transitionName2="PresentToAbsent")
+    bouts = compute_bouts(transition, presenceTransition)
     # print(presenceTransition)
-    bouts = get_bouts(data_frame)
-    [print(bout) for bout in bouts.values()]
+    # bouts = get_bouts(data_frame)
+    [print(bout) for bout in bouts.items()]
+    # [print(bout) for bout in bouts.values()]
 
     
     dailyTransitions = get_num_of_daily_transition(transition)
         
     data_frame = resample_data(data_frame, 60)
     
-    timeAtDesk = get_time_at_desk(data_frame)
+    # timeAtDesk = get_time_at_desk(data_frame)
     
     # get name without extension from path
     name = os.path.splitext(os.path.basename(file_name))[0]
 
-    noahSummaryExport(".", name, dailyTransitions, percStanding, workDays)
+    noahSummaryExport(".", name, dailyTransitions, percStanding, workDays, bouts)

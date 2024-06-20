@@ -292,23 +292,42 @@ def plot_transition(transition):
     return fig
 
 def plot_bouts(fig, bouts):
-    # plot horizontal line for each bout : bouts = {boutNumber: (start time, end time, durationSUM,durationDiff, sitting/standing, present/absent)}
-    for bout, boutData in bouts.items():
-        # check if bout is present or absent
-        if boutData[5] == True:
-            fig.add_shape(
-                dict(
-                    type="line",
-                    x0=boutData[0],
-                    y0=600,
-                    x1=boutData[1],
-                    y1=600,
-                    line=dict(
-                        color="black",
-                        width=10,
-                    ),
-                )
+    # plot horizontal line for each bout : bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
+    # plot sitting bouts in white and standing bouts in black
+    sittingBouts = list(bouts["Sitting"])
+    standingBouts = list(bouts["Standing"])
+    
+    for bout in sittingBouts:
+        fig.add_shape(
+            dict(
+                type="line",
+                x0=bout[0],
+                y0=0,
+                x1=bout[1],
+                y1=0,
+                line=dict(
+                    color="purple",
+                    width=100,
+                ),
             )
+        )
+    for bout in standingBouts:
+        fig.add_shape(
+            dict(
+                type="line",
+                x0=bout[0],
+                y0=0,
+                x1=bout[1],
+                y1=0,
+                line=dict(
+                    color="blue",
+                    width=100,
+                ),
+            )
+        )
+    # add legend
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='lines', marker=dict(color='purple'), name='Sitting bouts'))
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode='lines', marker=dict(color='blue'), name='Standing bouts'))
     return fig
 
 
@@ -319,26 +338,32 @@ if __name__ == "__main__":
     fileName = "test.parquet"
     fileNameBase = os.path.basename(fileName).split(".")[0]
     
+    # load data and clean it
     data_frame = analysis.load_from_parquet(fileName)
     data_frame = analysis.check_data(data_frame)
     data_frame = analysis.remove_daily_outliers(data_frame, outlierThreshold=4)
     
+    # resample data to 1 minute intervals to compute workdays and remove out of work hours data
     resample_data_frame = analysis.resample_data(data_frame, 60)
     workDays = analysis.get_workday(resample_data_frame)
     data_frame = analysis.remove_daily_out_work_hours(data_frame, workDays)
-
+    
+    # compute daily threshold, sitting and standing, transitions, presence transitions, and bouts
     data_frame = analysis.compute_daily_threshold(data_frame, minDistance=150)
     data_frame = analysis.compute_sitting_and_standing(data_frame)
     data_frame = analysis.compute_sit_stand_transitions(data_frame)
     data_frame = analysis.compute_present_to_absent_transitions(data_frame)
-    data_frame = analysis.compute_bouts(data_frame)
 
+    
     total_duration = analysis.get_data_duration(data_frame)
     percStanding = analysis.get_sitting_and_standing_percentage(data_frame)
     transition = analysis.get_sit_stand_transitions(data_frame)
     transition = analysis.filter_transitions(transition, minDuration=120, transitionName1="TransitionToUP", transitionName2="TransitionToDown")
-    presenceTransition = analysis.get_present_to_absent_transitions(data_frame)
-    bout = analysis.get_bouts(data_frame)
+    presenceTransition = analysis.get_present_to_absent_transitions(data_frame, minDuration=60)
+    # presenceTransition =  analysis.filter_transitions(presenceTransition , minDuration=60, transitionName1="AbsentToPresent", transitionName2="PresentToAbsent")
+
+    bouts = analysis.compute_bouts( transition, presenceTransition)
+    # bout = analysis.get_bouts(data_frame)
     data_frame = analysis.resample_data(data_frame, 60)
 
     # timeAtDesk = analysis.get_time_at_desk(data_frame)
@@ -349,7 +374,7 @@ if __name__ == "__main__":
     fig = plot_threshold(data_frame,fig)
     fig = plot_transitions(fig,transition)
     fig = plot_presence_transitions(fig,presenceTransition)
-    fig = plot_bouts(fig, bout)
+    fig = plot_bouts(fig, bouts)
     figures["time_series"] = fig
     # fig = plot_workday(workDays)
     # figures["workday"] = fig

@@ -23,44 +23,54 @@ if __name__ == '__main__':
         file_base = os.path.splitext(file_base)[0]
         total_duration = analysis.get_data_duration(data_frame)
         if total_duration > timedelta(hours=24):
+            print(f"Processing {file_base} with duration {total_duration}")
             data_frame = analysis.remove_daily_outliers(data_frame,outlierThreshold=4)
             resampled_data_frame = analysis.resample_data(data_frame, 60)
             workDays = analysis.get_workday(resampled_data_frame)
             data_frame = analysis.remove_daily_out_work_hours(data_frame, workDays)
-            
+            print(f"Computing threshold and transitions for {file_base}")
             data_frame = analysis.compute_daily_threshold(data_frame, minDistance=150)
             data_frame = analysis.compute_sitting_and_standing(data_frame)
             data_frame = analysis.compute_sit_stand_transitions(data_frame)
+            data_frame = analysis.compute_present_to_absent_transitions(data_frame)
 
+            print(f"Computing metrics for {file_base}")
             percStanding = analysis.get_sitting_and_standing_percentage(data_frame)
             transition = analysis.get_sit_stand_transitions(data_frame)
-            transition = analysis.filter_transitions(transition, minDuration=120)
+            transition = analysis.filter_transitions(transition, minDuration=120, transitionName1="TransitionToUP", transitionName2="TransitionToDown")
+            presenceTransition = analysis.get_present_to_absent_transitions(data_frame, minDuration=60)
+            bouts = analysis.compute_bouts(transition, presenceTransition)
+
             dailyTransitions = analysis.get_num_of_daily_transition(transition)
             
             data_frame = analysis.resample_data(data_frame, 60)
             # timeAtDesk = analysis.get_time_at_desk(data_frame)
             
-            analysis.noahSummaryExport(output_dir, file_base, dailyTransitions, percStanding, workDays)
+            # print(f"Exporting results for {file_base}")
+            analysis.noahSummaryExport(output_dir, file_base, dailyTransitions, percStanding, workDays, bouts)
             
-            figures = {}
-            fig = plotting.plot_data(data_frame, numdays=total_duration.days)
-            fig = plotting.plot_threshold(data_frame,fig)
-            fig = plotting.plot_transitions(fig,transition)
-            figures["time_series"] = fig
-            # fig = plotting.plot_workday(workDays)
-            # figures["workday"] = fig
-            # # fig = plotting.plot_time_at_desk(timeAtDesk)
-            # # figures["time_at_desk"] = fig
-            # fig = plotting.plot_sitting_and_standing_percentage(percStanding)
-            # figures["sitting_standing"] = fig
+            # figures = {}
+            # fig = plotting.plot_data(data_frame, numdays=total_duration.days)
+            # fig = plotting.plot_threshold(data_frame,fig)
+            # fig = plotting.plot_transitions(fig,transition)
+            # fig = plotting.plot_presence_transitions(fig,presenceTransition)
+            # fig = plotting.plot_bouts(fig, bouts)
+
+            # figures["time_series"] = fig
+            # # fig = plotting.plot_workday(workDays)
+            # # figures["workday"] = fig
+            # # # fig = plotting.plot_time_at_desk(timeAtDesk)
+            # # # figures["time_at_desk"] = fig
+            # # fig = plotting.plot_sitting_and_standing_percentage(percStanding)
+            # # figures["sitting_standing"] = fig
         
             
-            for name, fig in figures.items():
-                plot_output_dir = os.path.join(output_dir, name)
-                # create a directory for each name if it does not exist
-                if not os.path.exists(plot_output_dir):
-                    os.makedirs(plot_output_dir)
-                outFile = os.path.join(plot_output_dir, f"{name}_{file_base}.html")
-                pio.write_html(fig, outFile)
+            # for name, fig in figures.items():
+            #     plot_output_dir = os.path.join(output_dir, name)
+            #     # create a directory for each name if it does not exist
+            #     if not os.path.exists(plot_output_dir):
+            #         os.makedirs(plot_output_dir)
+            #     outFile = os.path.join(plot_output_dir, f"{name}_{file_base}.html")
+            #     pio.write_html(fig, outFile)
     
         

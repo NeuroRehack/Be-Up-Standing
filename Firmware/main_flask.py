@@ -18,12 +18,10 @@ import configparser
 from waitress import serve
 import json
 import subprocess
-import logging
 
 
 
 import lib.SDL_DS3231 as RTC
-import lib.full_color_led as led
 import backup_to_drive as google_drive
 from lib.battery import compute_battery_level
 
