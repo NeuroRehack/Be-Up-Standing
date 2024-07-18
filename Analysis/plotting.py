@@ -6,7 +6,7 @@ from tqdm import tqdm
 import os
 from datetime import datetime, timedelta
 
-# data_frameexample
+# data_frame example
 #                 Date time  Distance(mm)  Human Present   Threshold  Standing  TransitionToUP  TransitionToDown  PresentToAbsent  AbsentToPresent  Bout
 # 0     2023-11-17 12:36:02         364.0           True  295.087819      True           False             False            False            False     0
 # 1     2023-11-17 12:36:07         364.0           True  295.087819      True           False             False            False            False     0
@@ -21,6 +21,15 @@ from datetime import datetime, timedelta
 # 62697 2023-11-30 11:17:59         351.0           True  149.232044      True           False             False            False            False   596
 
 def plot_data(data_frame, numdays = None):
+    """Summary: Plot the data frame using a bar chart where the height of the bar is the distance and the color is the human present. true is green, false is red
+        
+        Args:
+            data_frame (pandas.DataFrame): data frame to plot
+            numdays (int): number of days to plot
+        
+        Returns:
+            fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # filter the data frame to only include data between the start and end datetime
     # plot the data using a bar chart where the height of the bar is the distance and the color is the human present. true is green, false is red
     fig = px.bar(data_frame, x='Date time', y='Distance(mm)', color='Human Present',
@@ -39,6 +48,15 @@ def plot_data(data_frame, numdays = None):
     return fig
 
 def plot_threshold(data_frame,fig):
+    """Summary: Draw horizontal line at daily threshold. overlay the line on the existing figure
+
+    Args:
+        data_frame (pandas.DataFrame): data frame to plot
+        fig (plotly.graph_objects.Figure): plotly figure object
+        
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     #get threshold for each day and put it in a dictionary {date:threshold}
     thresholdDates = data_frame.groupby(data_frame['Date time'].dt.date)['Threshold'].mean()
     thresholdDates = thresholdDates.to_dict()
@@ -64,6 +82,16 @@ def plot_threshold(data_frame,fig):
     return fig
 
 def plot_transitions(fig, transition, max_distance = 1000):
+    """Summary: Draw vertical lines at transitions. blue for transition to standing, purple for transition to sitting
+
+    Args:
+        fig (plotly.graph_objects.Figure): plotly figure object
+        transition (dict): dictionary of transitions {TransitionToUP: [date1, date2, ...], TransitionToDown: [date1, date2, ...]}
+        max_distance (int, optional): max distance to plot. Defaults to 1000.
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # draw vertical lines at transitions
     # blue for transition to standing
     # purple for transition to sitting
@@ -104,6 +132,16 @@ def plot_transitions(fig, transition, max_distance = 1000):
     return fig
 
 def plot_presence_transitions(fig, transition, max_distance = 1000):
+    """Summary: Draw vertical lines at transitions. blue for transition to standing, purple for transition to sitting
+
+    Args:
+        fig (plotly.graph_objects.Figure): plotly figure object
+        transition (dict): dictionary of transitions {PresentToAbsent: [date1, date2, ...], AbsentToPresent: [date1, date2, ...]}
+        max_distance (int, optional): max distance to plot. Defaults to 1000.
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # draw vertical lines at transitions
     # blue for transition to standing
     # purple for transition to sitting
@@ -142,65 +180,16 @@ def plot_presence_transitions(fig, transition, max_distance = 1000):
 
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color='red'), name='Absent to Present'))
     return fig
-    
-    # if threshold is not None:
-    #     fig.add_shape(
-    #         dict(
-    #             type="line",
-    #             x0=min(data_frame['Date time']),
-    #             y0=threshold,
-    #             x1=max(data_frame['Date time']),
-    #             y1=threshold,
-    #             line=dict(
-    #                 color="red",
-    #                 width=3,
-    #             ),
-    #         )
-    #     )
-    #     # add legend
-    #     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color='red'), name='Threshold'))
-        
-    # # draw vertical lines at transitions
-    # if transition is not None:
-    #     transitionUP = transition["TransitionToUP"]
-    #     for date in transitionUP:
-    #         fig.add_shape(
-    #             dict(
-    #                 type="line",
-    #                 x0=date,
-    #                 y0=0,
-    #                 x1=date,
-    #                 y1=max_distance,
-    #                 line=dict(
-    #                     color="blue",
-    #                     width=1,
-    #                 ),
-    #             )
-    #         )
-    #     transitionDown = transition["TransitionToDown"]
-    #     for date in transitionDown:
-    #         fig.add_shape(
-    #             dict(
-    #                 type="line",
-    #                 x0=date,
-    #                 y0=0,
-    #                 x1=date,
-    #                 y1=max_distance,
-    #                 line=dict(
-    #                     color="purple",
-    #                     width=1,
-    #                 ),
-    #             )
-    #         )
-    #     # add legend
-    #     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color='blue'), name='Transition to standing'))
-    #     fig.add_trace(go.Scatter(x=[None], y=[None], mode='markers', marker=dict(color='purple'), name='Transition to sitting'))
-    
-    # show the figures
-    # save plot to html
-    
-    
+      
 def plot_workday(workdays):
+    """Summary: Plot the start time and end time against dates for each workday using plotly scatter
+
+    Args:
+        workdays (dict): dictionary of workdays {date: (start_time, end_time)}
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # plot the start time and end time against dates for each workday using plotly scatter
     dates = list(workdays.keys())
     start_times = [workdays[date][0] for date in dates]
@@ -234,7 +223,8 @@ def plot_workday(workdays):
     fig.update_yaxes(
         range=[0, 24*60*60],
         tickvals=list(range(0, 24*60*60, 60*60)),  # every hour
-        ticktext=[f'{h}:00:00' for h in range(24)]  # labels for every hour
+        ticktext=[f'{h}:00:00' for h in range(24)],  # labels for every hour
+        autorange="reversed"
     )
     # add title and labels
     fig.update_layout(title=f'Workday\ntime from first presence to last presence', xaxis_title='Date', yaxis_title='Time')
@@ -243,6 +233,14 @@ def plot_workday(workdays):
     return fig
     
 def plot_time_at_desk(timeAtDesk):
+    """Summary: Plot stacke bar chart of time spent at desk and time spent away from desk {date:(time_at_desk, time_away_from_desk)}
+
+    Args:
+        timeAtDesk (dict): dictionary of time spent at desk and time spent away from desk {date:(time_at_desk, time_away_from_desk)}
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # plot stacke bar chart of time spent at desk and time spent away from desk {date:(time_at_desk, time_away_from_desk)}
     dates = list(timeAtDesk.keys())
     time_at_desk = [timeAtDesk[date][1] for date in dates]
@@ -259,7 +257,15 @@ def plot_time_at_desk(timeAtDesk):
                      ticktext=[f'{h}:00:00' for h in range(24)])  # labels for every hour
     return fig
 
-def plot_sitting_and_standing_percentage(percStanding):#percStanding = {date:(sititng_percentage, standing_percentage)}
+def plot_sitting_and_standing_percentage(percStanding):
+    """Summary: Plot the percentage of time spent sitting and standing for each date
+
+    Args:
+        percStanding (dict): dictionary of percentage of time spent sitting and standing for each date
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # plot the percentage of time spent sitting and standing for each date
     fig = go.Figure()
     dates = list(percStanding.keys())
@@ -275,12 +281,19 @@ def plot_sitting_and_standing_percentage(percStanding):#percStanding = {date:(si
     fig.update_xaxes(title='Date')
     fig.update_yaxes(title='Percentage')
 
-    
     # new line symbol in html
     
     return fig
 
 def plot_transition(transition):
+    """Summary: Plot the number of transitions between sitting and standing for each date
+
+    Args:
+        transition (dict): dictionary of transitions {TransitionToUP: [date1, date2, ...], TransitionToDown: [date1, date2, ...]}
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # plot the number of transitions between sitting and standing for each date
     fig = go.Figure()
     dates = list(transition.keys())
@@ -292,6 +305,15 @@ def plot_transition(transition):
     return fig
 
 def plot_bouts(fig, bouts):
+    """Summary: Plot horizontal line for each bout : bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
+
+    Args:
+        fig (plotly.graph_objects.Figure): plotly figure object
+        bouts (dict): dictionary of bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
+
+    Returns:
+        fig (plotly.graph_objects.Figure): plotly figure object
+    """
     # plot horizontal line for each bout : bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
     # plot sitting bouts in white and standing bouts in black
     sittingBouts = list(bouts["Sitting"])
@@ -329,46 +351,52 @@ def plot_bouts(fig, bouts):
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='lines', marker=dict(color='purple'), name='Sitting bouts'))
     fig.add_trace(go.Scatter(x=[None], y=[None], mode='lines', marker=dict(color='blue'), name='Standing bouts'))
     return fig
-
-
-
-    
+  
 if __name__ == "__main__":
     fileName = "C:\\dps_out\\2009_9F56.parquet"
     fileName = "test.parquet"
     fileNameBase = os.path.basename(fileName).split(".")[0]
     
     # load data and clean it
+    print(f"Loding data from {fileName}, cleaning and removing outliers")
     data_frame = analysis.load_from_parquet(fileName)
     data_frame = analysis.check_data(data_frame)
     data_frame = analysis.remove_daily_outliers(data_frame, outlierThreshold=4)
     
     # resample data to 1 minute intervals to compute workdays and remove out of work hours data
+    print("Resampling data to 1 minute intervals, computing workdays and removing out of work hours data from the original data")
     resample_data_frame = analysis.resample_data(data_frame, 60)
     workDays = analysis.get_workday(resample_data_frame)
     data_frame = analysis.remove_daily_out_work_hours(data_frame, workDays)
     
     # compute daily threshold, sitting and standing, transitions, presence transitions, and bouts
+    print("Computing threshold and transitions")
     data_frame = analysis.compute_daily_threshold(data_frame, minDistance=150)
     data_frame = analysis.compute_sitting_and_standing(data_frame)
     data_frame = analysis.compute_sit_stand_transitions(data_frame)
     data_frame = analysis.compute_present_to_absent_transitions(data_frame)
 
-    
+    print("Computing metrics")
+    print("Getting total duration")
     total_duration = analysis.get_data_duration(data_frame)
+    print("Getting sitting and standing percentage")
     percStanding = analysis.get_sitting_and_standing_percentage(data_frame)
+    print("Getting sit stand transitions")
     transition = analysis.get_sit_stand_transitions(data_frame)
+    print("Filtering transitions")
     transition = analysis.filter_transitions(transition, minDuration=120, transitionName1="TransitionToUP", transitionName2="TransitionToDown")
+    print("Getting presence transitions")
     presenceTransition = analysis.get_present_to_absent_transitions(data_frame, minDuration=60)
     # presenceTransition =  analysis.filter_transitions(presenceTransition , minDuration=60, transitionName1="AbsentToPresent", transitionName2="PresentToAbsent")
-
+    print("Computing bouts")
     bouts = analysis.compute_bouts( transition, presenceTransition)
-    # bout = analysis.get_bouts(data_frame)
-    data_frame = analysis.resample_data(data_frame, 60)
+    # # bout = analysis.get_bouts(data_frame)
+    # data_frame = analysis.resample_data(data_frame, 60)
 
-    # timeAtDesk = analysis.get_time_at_desk(data_frame)
-    
-    print(data_frame.head())
+    timeAtDesk = analysis.get_time_at_desk(data_frame)
+
+    # print(data_frame.head())
+    print("Creating plots")
     figures = {}
     fig = plot_data(data_frame, numdays=total_duration.days)
     fig = plot_threshold(data_frame,fig)
@@ -376,12 +404,12 @@ if __name__ == "__main__":
     fig = plot_presence_transitions(fig,presenceTransition)
     fig = plot_bouts(fig, bouts)
     figures["time_series"] = fig
-    # fig = plot_workday(workDays)
-    # figures["workday"] = fig
-    # fig = plot_time_at_desk(timeAtDesk)
-    # figures["time_at_desk"] = fig
-    # fig = plot_sitting_and_standing_percentage(percStanding)
-    # figures["sitting_standing"] = fig
+    fig = plot_workday(workDays)
+    figures["workday"] = fig
+    fig = plot_time_at_desk(timeAtDesk)
+    figures["time_at_desk"] = fig
+    fig = plot_sitting_and_standing_percentage(percStanding)
+    figures["sitting_standing"] = fig
     
     for name, fig in figures.items():
         fig.show()

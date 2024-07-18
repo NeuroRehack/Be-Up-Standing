@@ -6,15 +6,31 @@ from plotly import io as pio
 
 import plotting
 from tqdm import tqdm
+from tkinter import filedialog
+import tkinter as tk
 
 
 if __name__ == '__main__':
-    input_dir = "C:\\DPS_Out_2"
-    output_dir = "C:\\DPS_Out_2\\results"
+    root = tk.Tk()
+    root.withdraw()
+    # input_dir = "C:\\Users\\LocalSK\\Downloads\\DPS_Merged"
+    input_dir = filedialog.askdirectory(title="Select the folder containing the Standup data")
+    if not input_dir:
+        print("No folder selected. Exiting.")
+        exit()
+    # output_dir = "C:\\Users\\LocalSK\\Downloads\\DPS_Merged\\results"
+    output_dir = filedialog.askdirectory(title="Select the output folder")
+    if not output_dir:
+        print("No output folder selected. Exiting.")
+        exit()
+    # check if the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     completeFileList = [os.path.join(path, name) for path, subdirs, files in os.walk(input_dir) for name in files if name.endswith(".parquet")]
     
 
-    for file in tqdm(completeFileList):
+    for file in tqdm(completeFileList, desc="Processing files", dynamic_ncols=True):
+        print(f"Loading {file}")
         data_frame = analysis.load_from_parquet(file)
         data_frame = analysis.check_data(data_frame)
         
@@ -42,35 +58,35 @@ if __name__ == '__main__':
             bouts = analysis.compute_bouts(transition, presenceTransition)
 
             dailyTransitions = analysis.get_num_of_daily_transition(transition)
+            timeAtDesk = analysis.get_time_at_desk(data_frame)
             
             data_frame = analysis.resample_data(data_frame, 60)
-            # timeAtDesk = analysis.get_time_at_desk(data_frame)
-            
-            # print(f"Exporting results for {file_base}")
+            print(f"Exporting summary for {file_base}")
             analysis.noahSummaryExport(output_dir, file_base, dailyTransitions, percStanding, workDays, bouts)
             
-            # figures = {}
-            # fig = plotting.plot_data(data_frame, numdays=total_duration.days)
-            # fig = plotting.plot_threshold(data_frame,fig)
-            # fig = plotting.plot_transitions(fig,transition)
-            # fig = plotting.plot_presence_transitions(fig,presenceTransition)
-            # fig = plotting.plot_bouts(fig, bouts)
+            print(f"Plotting figures for {file_base}")
+            figures = {}
+            fig = plotting.plot_data(data_frame, numdays=total_duration.days)
+            fig = plotting.plot_threshold(data_frame,fig)
+            fig = plotting.plot_transitions(fig,transition)
+            fig = plotting.plot_presence_transitions(fig,presenceTransition)
+            fig = plotting.plot_bouts(fig, bouts)
+            figures["time_series"] = fig
 
-            # figures["time_series"] = fig
-            # # fig = plotting.plot_workday(workDays)
-            # # figures["workday"] = fig
-            # # # fig = plotting.plot_time_at_desk(timeAtDesk)
-            # # # figures["time_at_desk"] = fig
-            # # fig = plotting.plot_sitting_and_standing_percentage(percStanding)
-            # # figures["sitting_standing"] = fig
-        
-            
-            # for name, fig in figures.items():
-            #     plot_output_dir = os.path.join(output_dir, name)
-            #     # create a directory for each name if it does not exist
-            #     if not os.path.exists(plot_output_dir):
-            #         os.makedirs(plot_output_dir)
-            #     outFile = os.path.join(plot_output_dir, f"{name}_{file_base}.html")
-            #     pio.write_html(fig, outFile)
+            fig = plotting.plot_workday(workDays)
+            figures["workday"] = fig
+            fig = plotting.plot_time_at_desk(timeAtDesk)
+            figures["time_at_desk"] = fig
+            fig = plotting.plot_sitting_and_standing_percentage(percStanding)
+            figures["sitting_standing"] = fig
+
+            print(f"Saving figures for {file_base}")
+            for name, fig in tqdm(figures.items(), desc="Saving figures", dynamic_ncols=True):
+                plot_output_dir = os.path.join(output_dir, name)
+                # create a directory for each name if it does not exist
+                if not os.path.exists(plot_output_dir):
+                    os.makedirs(plot_output_dir)
+                outFile = os.path.join(plot_output_dir, f"{name}_{file_base}.html")
+                pio.write_html(fig, outFile)
     
         

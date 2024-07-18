@@ -9,10 +9,17 @@ import plotly.graph_objects as go
 import tkinter as tk
 from tkinter import filedialog
 from scipy.stats import zscore
-import scipy.stats as statstttttttttttt
 
+def time_to_seconds(t):
+    """Summary: This function converts a time object to seconds
 
+    Args:
+        t (datetime.time): The time object to convert
 
+    Returns:
+        int: The time in seconds
+    """
+    return (t.hour * 60 + t.minute) * 60 + t.second
 
 def load_from_parquet(file_name):
     """Summary: This function reads a parquet file and returns a pandas data frame
@@ -30,6 +37,14 @@ def load_from_parquet(file_name):
     return data_frame
 
 def load_from_csv(file_name):
+    """Summary: This function reads a csv file and returns a pandas data frame
+
+    Args:
+        file_name (str): The path to the csv file
+
+    Returns:
+        pandas.DataFrame: The data frame read from the csv file
+    """
     # read the csv file
     data_frame = pd.read_csv(file_name)
     return data_frame
@@ -57,8 +72,6 @@ def check_data(data_frame):
     data_frame = data_frame.dropna()
     return data_frame
 
-# -	Workday (start time at work, end time at work, total work hours) – 
-#   as indicated by the first and last human presence (has the assumption they go to their desk first and last thing in the day)
 def get_workday(data_frame):
     """Summary: This function computes the start and end times of the workday for each workday in the data frame
 
@@ -81,8 +94,16 @@ def get_workday(data_frame):
         
     return workdaysdict
 
-
 def remove_daily_out_work_hours(data_frame, workdays):
+    """Summary: This function removes data outside of work hours for each workday in the data frame
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to remove data from
+        workdays (dict): A dictionary with dates as keys and tuples of start and end times as values
+
+    Returns:
+        pandas.DataFrame: The data frame with data outside of work hours removed
+    """
     # gorup dataframe by date and remove data outside of work hours using the remove_out_work_hours function
     data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(remove_out_work_hours, workdays)
     
@@ -91,6 +112,15 @@ def remove_daily_out_work_hours(data_frame, workdays):
     return data_frame
 
 def remove_out_work_hours(data_frame, workdays):
+    """Summary: This function removes data outside of work hours for a single workday
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to remove data from
+        workdays (dict): A dictionary with dates as keys and tuples of start and end times as values
+
+    Returns:
+        pandas.DataFrame: The data frame with data outside of work hours removed
+    """
     # remove data outside of work hours an return the new data frame
     date = data_frame['Date time'].dt.date.iloc[0]
     if date not in workdays:
@@ -99,10 +129,17 @@ def remove_out_work_hours(data_frame, workdays):
     endTime = workdays[date][1]
     data_frame = data_frame[(data_frame['Date time'].dt.time >= startTime) & (data_frame['Date time'].dt.time <= endTime)]
     return data_frame
-  
-  
 
 def resample_data(data_frame, resampling_period = 0):
+    """Summary: This function resamples the data frame to a specified period
+    
+    Args:
+        data_frame (pandas.DataFrame): The data frame to resample
+        resampling_period (int, optional): The period to resample the data to in seconds. Defaults to 0.
+        
+    Returns:
+        pandas.DataFrame: The resampled data frame
+    """
     data_frame = data_frame.copy()
     if resampling_period == 0:
         return data_frame
@@ -110,6 +147,8 @@ def resample_data(data_frame, resampling_period = 0):
     bool_cols = data_frame.select_dtypes(include=[bool]).columns
     # compute sampling period base on date time of dta frame
     period = data_frame['Date time'].diff().median()
+    if period.total_seconds() == 0:
+        return data_frame
     # compute windows size so that the windo covers the resampling period
     window_size = int(resampling_period/period.total_seconds())
     # run rolling mean on distance and min on human present
@@ -129,8 +168,7 @@ def resample_data(data_frame, resampling_period = 0):
     # convert boolean columns to boolean
     data_frame[bool_cols] = data_frame[bool_cols].astype('bool')
     return data_frame
-    
-    
+      
 def get_data_duration(data_frame):
     """Summary: This function computes the total duration of the data in the data frame
 
@@ -146,17 +184,29 @@ def get_data_duration(data_frame):
     duration = end_time - start_time
     return duration
     
-        
-def time_to_seconds(t):
-    return (t.hour * 60 + t.minute) * 60 + t.second
-
 def get_data_for_date(data_frame, date):
+    """Summary: This function filters the data frame to only include data from a specific date
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to filter
+        date (datetime.date): The date to filter the data frame to
+
+    Returns:
+        pandas.DataFrame: The data frame with only data from the specified date
+    """
     # filter the data frame to only include data from that date
     day_data_frame = data_frame[data_frame['Date time'].dt.date == date]
     return day_data_frame
 
-# -	Time at desk (and time away from desk: which would just be total work hours – time at desk). 
 def get_time_at_desk(data_frame):
+    """Summary: This function computes the time at desk and time away from desk for each day in the data frame
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the time at desk from
+
+    Returns:
+        dict: A dictionary with dates as keys and tuples of time away from desk and time at desk as values
+    """
     # sort data_frame by date
     data_frame = data_frame.sort_values(by='Date time')
     # get the time difference betwween each row
@@ -176,7 +226,10 @@ def get_time_at_desk(data_frame):
     
     # unstack the multi-index series to get a dataframe with dates as index and 'Human Present' as columns
     time_at_desk = time_at_desk.unstack()
-    
+    # check if both columns exist in case there person is always away from desk or always at desk
+    if len(time_at_desk.columns) < 2:
+        return {}
+        
     # rename the columns
     time_at_desk.columns = ['Time away from desk', 'Time at desk']
     
@@ -189,8 +242,15 @@ def get_time_at_desk(data_frame):
         time_at_desk_dict[date] = (row['Time away from desk'].total_seconds(), row['Time at desk'].total_seconds())
     return time_at_desk_dict
 
-# -	Sitting time and standing time when at the desk (can covert to percentage like you have as we have work time. Pie graph that you did is useful).
 def compute_sitting_and_standing(data_frame):
+    """Summary: This function computes whether the person is sitting or standing based on the distance from the sensor and a threshold
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the sitting and standing from
+
+    Returns:
+        pandas.DataFrame: The data frame with a new column 'Standing' that is True if the person is standing and False if the person is sitting
+    """
     data_frame = data_frame.copy()
     # create a new column 'Standing' that is True if 'Distance(mm)' is greater than the threshold for that date
     data_frame['Standing'] = np.where(data_frame['Distance(mm)'] > data_frame['Threshold'], True, False)
@@ -221,6 +281,140 @@ def get_sitting_and_standing_percentage(data_frame):
     for date, row in standing_time.iterrows():
         standing_time_dict[date] = (row['Sitting'], row['Standing'])
     return standing_time_dict
+
+def get_sit_stand_transitions(data_frame):
+        #return dictionary of transitions {"TransitionToUP": [datetime], "TransitionToDown": [datetime]}
+    transitions = {}
+    transitionToUpList = data_frame[data_frame['TransitionToUP'] == True]['Date time'].tolist()
+    transitionsToDownList = data_frame[data_frame['TransitionToDown'] == True]['Date time'].tolist()
+    transitions["TransitionToUP"] = transitionToUpList
+    transitions["TransitionToDown"] = transitionsToDownList
+    return transitions
+
+def filter_transitions(transitions, minDuration, transitionName1, transitionName2):
+    """Summary: This function filters the transitions that are less than minDuration seconds and merges transitions that are less than minDuration seconds with the 2 adjacent transitions
+
+    Args:
+        transitions (dict): A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+        minDuration (int): The minimum duration in seconds for a transition
+        transitionName1 (str): The name of the first transition
+        transitionName2 (str): The name of the second transition
+
+    Returns:
+        dict: A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+    """
+    # filter transitions that are less than minDuration seconds
+    #transition = {transitionName1: [datetime], transitionName2: [datetime]}
+    # convert to {datetime: transitionName}
+    transition = {}
+    for dateTime in transitions[transitionName1]:
+        transition[dateTime] = transitionName1
+    for dateTime in transitions[transitionName2]:
+        transition[dateTime] = transitionName2
+    # sort the dictionary by date time
+    transition = dict(sorted(transition.items()))
+    dateTimes = list(transition.keys())
+    # pair the datetimes together [1,2,3,4,5,6,7,8,9,10] -> [(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10)]
+    datePairs = [(dateTimes[i], dateTimes[i+1]) for i in range(len(dateTimes)-1)]
+    # filter the pairs that are less than minDuration seconds. if a pair is less than minDuration seconds, merge the pair with the 2 adjacent pairs
+    GoodPairs = []
+    BadPairs = []
+    for i, pair in enumerate(datePairs):
+        if (pair[1] - pair[0]).total_seconds() < minDuration:
+            BadPairs.append(pair)            
+        else:
+            GoodPairs.append(pair)
+    goodList = []
+    for pair in GoodPairs:
+        goodList.append(pair[0])
+        goodList.append(pair[1])
+    badList = []
+    for pair in BadPairs:
+        badList.append(pair[0])
+        badList.append(pair[1])
+    dateList = []
+    for dateTime in goodList:
+        if dateTime not in badList and dateTime not in dateList:
+            dateList.append(dateTime)
+            
+    newTransition = {transitionName1: [], transitionName2: []}
+    for dateTime in dateList:
+        key = transition[dateTime]
+        value = dateTime
+        newTransition[key].append(value)
+        
+    return newTransition
+
+def remove_outliers(data_frame, outlierThreshold = 3):
+    """Summary: This function removes outliers from the data frame. Outliers are defined as values that are outlierThreshold standard deviations away from the mean.
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to remove outliers from
+        outlierThreshold (int, optional): The number of standard deviations away from the mean to consider as an outlier. Defaults to 3.
+
+    Returns:
+        pandas.DataFrame: The data frame with outliers removed
+    """
+    # remove outliers from the data frame
+    data_frame = data_frame[np.abs(zscore(data_frame['Distance(mm)'])) < outlierThreshold]
+    return data_frame
+
+def remove_outliers_irq(data_frame, outlierThreshold = 1.5):
+    """Summary: This function removes outliers from the data frame using the interquartile range. Outliers are defined as values that are outside of the range (Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to remove outliers from
+        outlierThreshold (float, optional): The number of interquartile ranges to consider as an outlier. Defaults to 1.5.
+
+    Returns:
+        pandas.DataFrame: The data frame with outliers removed
+    """
+    
+    # remove outliers using the interquartile range
+    # compute the first and third quartiles
+    Q1 = data_frame['Distance(mm)'].quantile(0.25)
+    Q3 = data_frame['Distance(mm)'].quantile(0.75)
+    # compute the interquartile range
+    IQR = Q3 - Q1
+    # remove outliers from the data frame that are outside of the range (Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
+    data_frame = data_frame[(data_frame['Distance(mm)'] > (Q1 - outlierThreshold * IQR)) & (data_frame['Distance(mm)'] < (Q3 + outlierThreshold * IQR))]
+    return data_frame
+
+def remove_daily_outliers(data_frame, outlierThreshold = 3):
+    """Summary: This function removes outliers from the data frame for each date. 
+                Outliers are defined as values that are outlierThreshold standard deviations away from the mean.
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to remove outliers from
+        outlierThreshold (int, optional): The number of standard deviations away from the mean to consider as an outlier. Defaults to 3.
+
+    Returns:
+        pandas.DataFrame: The data frame with outliers removed
+    """
+    # group data by date and remove outliers from each group
+    # data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(remove_outliers_irq, outlierThreshold)
+    data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(remove_outliers, outlierThreshold)
+    # reset index
+    data_frame = data_frame.reset_index(drop=True)
+    return data_frame
+
+def get_num_of_daily_transition(transitions):
+    """Summary: This function computes the number of sit to stand transitions and stand to sit transitions for each day
+
+    Args:
+        transitions (dict): A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+
+    Returns:
+        dict: A dictionary with dates as keys and the number of transitions as values
+    """
+    daylyTransitions = {}#{date: number of transitions}
+    for dateTime in transitions["TransitionToUP"]:
+        date = dateTime.date()
+        if date in daylyTransitions:
+            daylyTransitions[date] += 1
+        else:
+            daylyTransitions[date] = 1
+    return daylyTransitions
 
 def compute_sit_stand_transitions(data_frame):
     """Summary: This function computes the sit to stand transitions and stand to sit transitions in the data frame
@@ -264,58 +458,6 @@ def compute_daily_sit_stand_transitions(data_frame):
     copied_dt.loc[copied_dt.index[0], 'TransitionToDown'] = False
     return copied_dt.reset_index(drop=True)
 
-def get_sit_stand_transitions(data_frame):
-        #return dictionary of transitions {"TransitionToUP": [datetime], "TransitionToDown": [datetime]}
-    transitions = {}
-    transitionToUpList = data_frame[data_frame['TransitionToUP'] == True]['Date time'].tolist()
-    transitionsToDownList = data_frame[data_frame['TransitionToDown'] == True]['Date time'].tolist()
-    transitions["TransitionToUP"] = transitionToUpList
-    transitions["TransitionToDown"] = transitionsToDownList
-    return transitions
-
-def filter_transitions(transitions, minDuration, transitionName1, transitionName2):
-    # filter transitions that are less than minDuration seconds
-    #transition = {transitionName1: [datetime], transitionName2: [datetime]}
-    # convert to {datetime: transitionName}
-    transition = {}
-    for dateTime in transitions[transitionName1]:
-        transition[dateTime] = transitionName1
-    for dateTime in transitions[transitionName2]:
-        transition[dateTime] = transitionName2
-    # sort the dictionary by date time
-    transition = dict(sorted(transition.items()))
-    dateTimes = list(transition.keys())
-    # pair the datetimes together [1,2,3,4,5,6,7,8,9,10] -> [(1,2),(2,3),(3,4),(4,5),(5,6),(6,7),(7,8),(8,9),(9,10)]
-    datePairs = [(dateTimes[i], dateTimes[i+1]) for i in range(len(dateTimes)-1)]
-    # filter the pairs that are less than minDuration seconds. if a pair is less than minDuration seconds, merge the pair with the 2 adjacent pairs
-    GoodPairs = []
-    BadPairs = []
-    for i, pair in enumerate(datePairs):
-        if (pair[1] - pair[0]).total_seconds() < minDuration:
-            BadPairs.append(pair)            
-        else:
-            GoodPairs.append(pair)
-    goodList = []
-    for pair in GoodPairs:
-        goodList.append(pair[0])
-        goodList.append(pair[1])
-    badList = []
-    for pair in BadPairs:
-        badList.append(pair[0])
-        badList.append(pair[1])
-    dateList = []
-    for dateTime in goodList:
-        if dateTime not in badList and dateTime not in dateList:
-            dateList.append(dateTime)
-            
-    newTransition = {transitionName1: [], transitionName2: []}
-    for dateTime in dateList:
-        key = transition[dateTime]
-        value = dateTime
-        newTransition[key].append(value)
-        
-    return newTransition
-
 def compute_daily_threshold(data_frame, minDistance = 200):
     """Summary: This function computes the daily threshold for each date in the data frame
 
@@ -333,6 +475,15 @@ def compute_daily_threshold(data_frame, minDistance = 200):
     return data_frame
 
 def compute_threshold(Vector, minDistance = 0):
+    """Summary: This function computes the threshold for a vector of values
+
+    Args:
+        Vector (list): The vector of values to compute the threshold from
+        minDistance (int, optional): The minimum distance between the maximum and minimum values for the threshold. Defaults to 0.
+
+    Returns:
+        int: The threshold for the vector of values
+    """
     # convert to numpy array  
     Vector = np.array(Vector)
     # # remove outliers
@@ -346,62 +497,15 @@ def compute_threshold(Vector, minDistance = 0):
     threshold = Vector.mean() #+ Vector.std()
     return threshold
     
-def remove_outliers(data_frame, outlierThreshold = 3):
-    """Summary: This function removes outliers from the data frame. Outliers are defined as values that are outlierThreshold standard deviations away from the mean.
-
-    Args:
-        data_frame (pandas.DataFrame): The data frame to remove outliers from
-        outlierThreshold (int, optional): The number of standard deviations away from the mean to consider as an outlier. Defaults to 3.
-
-    Returns:
-        pandas.DataFrame: The data frame with outliers removed
-    """
-    # remove outliers from the data frame
-    data_frame = data_frame[np.abs(zscore(data_frame['Distance(mm)'])) < outlierThreshold]
-    return data_frame
-
-def remove_outliers_irq(data_frame, outlierThreshold = 1.5):
-    
-    # remove outliers using the interquartile range
-    # compute the first and third quartiles
-    Q1 = data_frame['Distance(mm)'].quantile(0.25)
-    Q3 = data_frame['Distance(mm)'].quantile(0.75)
-    # compute the interquartile range
-    IQR = Q3 - Q1
-    # remove outliers from the data frame that are outside of the range (Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
-    data_frame = data_frame[(data_frame['Distance(mm)'] > (Q1 - outlierThreshold * IQR)) & (data_frame['Distance(mm)'] < (Q3 + outlierThreshold * IQR))]
-    return data_frame
-
-def remove_daily_outliers(data_frame, outlierThreshold = 3):
-    """Summary: This function removes outliers from the data frame for each date. 
-                Outliers are defined as values that are outlierThreshold standard deviations away from the mean.
-
-    Args:
-        data_frame (pandas.DataFrame): The data frame to remove outliers from
-        outlierThreshold (int, optional): The number of standard deviations away from the mean to consider as an outlier. Defaults to 3.
-
-    Returns:
-        pandas.DataFrame: The data frame with outliers removed
-    """
-    # group data by date and remove outliers from each group
-    # data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(remove_outliers_irq, outlierThreshold)
-    data_frame = data_frame.groupby(data_frame['Date time'].dt.date).apply(remove_outliers, outlierThreshold)
-    # reset index
-    data_frame = data_frame.reset_index(drop=True)
-    return data_frame
-
-def get_num_of_daily_transition(transitions):
-    daylyTransitions = {}#{date: number of transitions}
-    for dateTime in transitions["TransitionToUP"]:
-        date = dateTime.date()
-        if date in daylyTransitions:
-            daylyTransitions[date] += 1
-        else:
-            daylyTransitions[date] = 1
-    return daylyTransitions
-
-
 def compute_present_to_absent_transitions(data_frame):
+    """Summary: This function computes the present to absent and absent to present transitions in the data frame
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the transitions from
+
+    Returns:
+        pandas.DataFrame: The data frame with the new columns 'PresentToAbsent' and 'AbsentToPresent'
+    """
     data_frame = data_frame.copy()
     boolCols = data_frame.select_dtypes(include=[bool]).columns
     # group dataframe by date
@@ -424,6 +528,7 @@ def compute_present_to_absent(data_frame):
     # add a new column 'PresentToAbsent' that is True if 'Human Present' has changed compared to the previous row
     data_frame['PresentToAbsent'] = (data_frame['Human Present'].ne(data_frame['Human Present'].shift())) & (data_frame['Human Present'] == False)
     data_frame['AbsentToPresent'] = (data_frame['Human Present'].ne(data_frame['Human Present'].shift())) & (data_frame['Human Present'] == True)
+
     # set the first row to False because there is no previous row to compare to
     data_frame.loc[data_frame.index[0], 'PresentToAbsent'] = False
     data_frame.loc[data_frame.index[0], 'AbsentToPresent'] = True
@@ -432,8 +537,16 @@ def compute_present_to_absent(data_frame):
     
     return data_frame.reset_index(drop=True)
 
-
 def compute_bouts(transition, presenceTransition):
+    """Summary: This function computes the bouts of sitting and standing for each day
+
+    Args:
+        transition (dict): A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+        presenceTransition (dict): A dictionary of transitions with keys 'PresentToAbsent' and 'AbsentToPresent' that contain lists of datetime objects
+
+    Returns:
+        dict: A dictionary with dates as keys and a dictionary of bouts with keys 'Sitting' and 'Standing' as values
+    """
     # a bout is a period of time where the person is either sitting or standing and is present
     # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present
     # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
@@ -479,9 +592,16 @@ def compute_bouts(transition, presenceTransition):
         i += 1
     return bout
                 
-            
-
 def compute_daily_bouts(data_frame, transitionDict):
+    """Summary: This function computes the bouts of sitting and standing for each day
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the bouts from
+        transitionDict (dict): A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+
+    Returns:
+        dict: A dictionary with dates as keys and a dictionary of bouts with keys 'Sitting' and 'Standing' as values
+    """
     #set first row to True
     data_frame.loc[data_frame.index[0], 'Bout'] = True
     # for dateTime in transitionDict set bout to True
@@ -489,11 +609,16 @@ def compute_daily_bouts(data_frame, transitionDict):
         data_frame.loc[data_frame['Date time'] == dateTime, 'Bout'] = True
     return data_frame
         
-        
-        
-     
-
 def get_present_to_absent_transitions(data_frame, minDuration = 60):
+    """Summary: This function computes the present to absent and absent to present transitions in the data frame
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the transitions from
+        minDuration (int, optional): The minimum duration in seconds for a transition. Defaults to 60.
+
+    Returns:
+        dict: A dictionary of transitions with keys 'PresentToAbsent' and 'AbsentToPresent' that contain lists of datetime objects
+    """
     #return list of datetime of transitions
     presentToAbsentList = data_frame[data_frame['PresentToAbsent'] == True]['Date time'].tolist()
     absentToPresentList = data_frame[data_frame['AbsentToPresent'] == True]['Date time'].tolist()
@@ -513,10 +638,19 @@ def get_present_to_absent_transitions(data_frame, minDuration = 60):
     absentToPresentList = [pair[1] for pair in presenceTransition]
     return {"PresentToAbsent": presentToAbsentList, "AbsentToPresent": absentToPresentList}
 
-
-
-
 def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays, bouts):
+    """Summary: This function exports the summary data to a csv file
+
+    Args:
+        output_dir (str): The directory to save the csv file to
+        name (str): The name of the csv file
+        dailyTransitions (dict): A dictionary with dates as keys and the number of transitions as values
+        percStanding (dict): A dictionary with dates as keys and a tuple of the percentage of time spent sitting and standing as values
+        workDays (dict): A dictionary with dates as keys and tuples of start and end times as values
+        bouts (dict): A dictionary with dates as keys and a dictionary of bouts with keys 'Sitting' and 'Standing' as values
+    Returns:
+        None
+    """
     summaryData =  pd.DataFrame()   
     # add Date,Transitions,Standing as columns
     summaryData['Transitions'] = np.nan
@@ -587,9 +721,6 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
         summaryData.loc[date, 'Number Standing Bouts 40min or more'] = nbStandingBoutsMoreThan40
             
     
-    
-        
-    
     # add missing dates to the summary data and fill with NaN
     # if transition number is Nan set standing to nan
     summaryData.loc[summaryData['Transitions'].isna(), 'Standing %'] = "NA"
@@ -613,8 +744,16 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
     summaryData.to_csv(outputPath, index=False)
     #print(f"Summary data saved to {outputPath}")
     
-    
 def get_bouts(data_frame):
+    """Summary: This function computes the bouts of sitting and standing for each day
+    
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the bouts from
+        
+    Returns:
+        dict: A dictionary with keys 'SittingPresent' and 'StandingPresent' that contain lists of tuples of start and end times
+    """
+        
     # a bout is a period of time where the person is either sitting or standing and is present
     # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present 
     # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
@@ -624,20 +763,12 @@ def get_bouts(data_frame):
     data_frame = data_frame[data_frame['Human Present'] == True]
     # create a dictionary of bouts {SittingPresent: [(start, end),...], StandingPresent: [(start, end),...]}
     bouts = {"SittingPresent": [], "StandingPresent": []}
-
-
     return bouts
 
     
-    
-    
-        
-        
-
 
 if __name__ == "__main__":
 
-    file_name = "C:\\dps_out\\2009_9F56.parquet"
     file_name = "test.parquet"
 
     data_frame = load_from_parquet(file_name)
@@ -653,7 +784,6 @@ if __name__ == "__main__":
     data_frame = compute_sit_stand_transitions(data_frame)
     data_frame = compute_present_to_absent_transitions(data_frame)
     
-    # print(data_frame.head())
 
     total_duration = get_data_duration(data_frame)
     percStanding = get_sitting_and_standing_percentage(data_frame)
@@ -667,7 +797,7 @@ if __name__ == "__main__":
     [print(bout) for bout in bouts.items()]
     # [print(bout) for bout in bouts.values()]
 
-    
+
     dailyTransitions = get_num_of_daily_transition(transition)
         
     data_frame = resample_data(data_frame, 60)
