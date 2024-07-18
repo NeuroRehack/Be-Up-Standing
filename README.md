@@ -1,7 +1,10 @@
 This project aims to monitor the use of standing desk by measuring the height of the desk and whether someone is present or not.
 This project utilises a Omega2 Pro to read data from a human presence sensor and a distance sensor and, store it in a CSV file. The data is periodically uploaded to Google Drive.
 
-
+<p align="center">
+  <img src="Documentation\CAD\StandUpDevice.png" width="400">
+  <img src="Documentation\CAD\standup_device_assembly.gif" width="400">
+</p>
 
 # Required material
 - [Omega2 Pro](https://onion.io/store/omega2-pro/)
@@ -25,9 +28,7 @@ The device requires internet access in order to install the necessary packages.
 ```sh
 wifisetup add -ssid <ssid> -encr psk2 -password <password>
 ```
-```sh
-wifisetup add -ssid BadLuck -encr psk2 -password trc5X2pl52X51
-```
+
 Replace ssid and password with the name and password of your wifi network.
 You should now have internet access, which you can verify by pinging a website:
 
@@ -62,5 +63,5 @@ Since we are using a headless device it is not possible for us to generate token
 Once you have generated the credentials file, copy it to the Firmware folder on the Omega2 Pro and rename it "credentials.json". You will also need it for accessing the google drive using the drive_cloner.py script from your computer.
 
 # Software
-There are to main scripts that are of use, the drive_cloner_ui.py script and and the drive_ui.py script. The drive_cloner_ui.py script is used to automatically clone the data from the google drive to your computer. After running it it the google drive should be empty and all the data locally stored in the chosen directory.  
+There are two main scripts that are of use, the drive_cloner_ui.py script and and the drive_ui.py script. The drive_cloner_ui.py script is used to automatically clone the data from the google drive to your computer. After running it it the google drive should be empty and all the data locally stored in the chosen directory.  
 The drive_ui.py script can be used to visualise the data in the google drive and allows the user to download or delete data
