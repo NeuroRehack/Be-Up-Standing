@@ -1,3 +1,5 @@
+# Desk Positioning System
+
 This project aims to monitor the use of standing desk by measuring the height of the desk and whether someone is present or not.
 This project utilises a Omega2 Pro to read data from a human presence sensor and a distance sensor and, store it in a CSV file. The data is periodically uploaded to Google Drive.
 
