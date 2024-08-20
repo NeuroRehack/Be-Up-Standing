@@ -26,8 +26,6 @@ def get_time_from_internet():
     datetime_str = data['datetime'].split("+")[0]
     dt = datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
     
-
-
     # Return the datetime object
     return dt
 

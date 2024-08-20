@@ -249,8 +249,6 @@ def check_password():
         return jsonify({'valid': False})
     
 
-
-
 @app.route('/change_password', methods=['POST'])
 def change_password():
     """

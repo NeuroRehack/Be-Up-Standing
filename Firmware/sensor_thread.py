@@ -126,7 +126,7 @@ def read_write_loop(rtc, status_queue, sensor_data_queue):
             stop = False
             # logging.info("sensor_thread: stop event cleared, starting recording again")
     
-        if device_should_record(WAKE_AT, SLEEP_AT, rtc) and not stop:
+        if device_should_record(WAKE_AT, SLEEP_AT, rtc) and not stop: # the device should be recording and the stop event has not been set
 
             status_queue.append(("recording", True))
 
