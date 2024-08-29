@@ -15,13 +15,20 @@ from googleapiclient.http import MediaIoBaseDownload
 import hashlib
 from tqdm import tqdm
 import json
-# toast
 import configparser
 from tkinter import messagebox,filedialog
 from tkinter import Tk
 from datetime import datetime, timedelta
 
 def check_download_dir(dir):
+    """Function to check if the download directory exists. If it does not exist, the user is prompted to select a directory to download files to.
+
+    Args:
+        dir (str): The directory path to check.
+        
+    Returns:
+        str: The directory path to download files to.
+    """
     print(dir)
     if not os.path.exists(dir):
         # HIDE TKINTER WINDOW
@@ -43,11 +50,16 @@ def check_download_dir(dir):
             config.write(config_file)
         return dir
     
-
-
-    
     
 def get_files_in_folder(folder_id):
+    """Function to get all files in a folder.
+    
+    Args:
+        folder_id (str): The ID of the folder to list files from.
+        
+    Returns:
+        list: A list of files in the folder.
+    """
     results = drive_service.files().list(
         q=f"'{folder_id}' in parents",
         fields="files(id, name, mimeType)").execute()
@@ -55,6 +67,14 @@ def get_files_in_folder(folder_id):
     return files
 
 def download_file(file_id, file_name, parent_dir):
+    """Function to download a file from Google Drive.
+    
+    Args:
+        file_id (str): The ID of the file to download.
+        file_name (str): The name of the file to download.
+        parent_dir (str): The parent directory to save the file to.
+    """
+    
     downloaded_file_path = os.path.join(parent_dir, file_name)
     request = drive_service.files().get_media(fileId=file_id)
     with open(downloaded_file_path, 'wb') as file:
@@ -67,6 +87,16 @@ def download_file(file_id, file_name, parent_dir):
     print(f"File '{file_name}' downloaded successfully.")
 
 def check_file(file_id, file_name, parent_dir):
+    """Function to check the integrity of a downloaded file using an MD5 hash.
+    
+    Args:
+        file_id (str): The ID of the file to check.
+        file_name (str): The name of the file to check.
+        parent_dir (str): The parent directory where the file is saved.
+        
+    Returns:
+        bool: True if the file hash matches the expected hash, False otherwise.
+    """
     expected_md5 = drive_service.files().get(fileId=file_id, fields="md5Checksum").execute()['md5Checksum']
     downloaded_file_path = os.path.join(parent_dir, file_name)
     with open(downloaded_file_path, 'rb') as downloaded_file:
@@ -78,6 +108,12 @@ def check_file(file_id, file_name, parent_dir):
     
 # Function to download files recursively
 def download_folder_contents(folder_id, parent_dir):
+    """Function to download the contents of a folder from Google Drive.
+
+    Args:
+        folder_id (str): The ID of the folder to download.
+        parent_dir (str): The parent directory to save the downloaded files to.
+    """
     files = get_files_in_folder(folder_id)
     if not files and folder_id != 'root':
         # The folder is empty: delete it from Google Drive
@@ -116,6 +152,8 @@ def download_folder_contents(folder_id, parent_dir):
                     os.remove(os.path.join(parent_dir, file_name))
 
 def list_all_files():
+    """Function to list all files in Google Drive.
+    """
     results = drive_service.files().list(
         q="trashed=false",
         fields="files(id, name, mimeType)").execute()
@@ -128,15 +166,14 @@ def list_all_files():
             print(f"{file['name']} ({file['id']})")
             
 def list_folder_structure(service, folder_id='root'):
-    """
-    List the folder structure of Google Drive and return it as a JSON structure.
-
-    Args:
-    - service: The initialized Google Drive API service.
-    - folder_id: The ID of the folder to start listing from (default is 'root' for the root folder).
-
-    Returns:
-    - A JSON structure representing the folder structure.
+    """ List the folder structure of Google Drive and return it as a JSON structure.
+       
+        Args:
+            service (googleapiclient.discovery.Resource): The initialized Google Drive API service.
+            folder_id (str): The ID of the folder to start listing from (default is 'root' for the root folder).        
+       
+        Returns:
+            list: A list of dictionaries representing the folder structure.
     """
     results = service.files().list(q=f"'{folder_id}' in parents", pageSize=1000).execute()
     items = results.get('files', [])
@@ -163,15 +200,18 @@ def list_folder_structure(service, folder_id='root'):
     return folder_structure
 
 def pretty_print_folder_structure(folder_structure):
-    """
-    Pretty-print the folder structure JSON with indentation.
+    """Pretty-print the folder structure JSON with indentation.
 
     Args:
-    - folder_structure: The JSON structure representing the folder hierarchy.
+        folder_structure (list): A list of dictionaries representing the folder structure
+        
     """
     print(json.dumps(folder_structure, indent=3))
 
 def delete_all_files():
+    """Function to delete all files and folders in Google Drive.
+    
+    """
     # recursively delete every file and folder in the drive
     results = drive_service.files().list(
         fields="files(id, name, mimeType)").execute()
@@ -215,26 +255,4 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
             continue    
-    # lastDownload = datetime.now() - timedelta(days=1)
-
-    # while 1:
-    #     print(f"last download: {lastDownload} next download: {lastDownload + timedelta(days=1)}")
-    #     # check if last attempt was more than 24h ago
-    #     if (datetime.now() - lastDownload).total_seconds() > 86400:
-    #         folder_struct =  list_folder_structure(drive_service)
-    #         # print(folder_struct)
-    #         pretty_print_folder_structure(folder_struct)
-            
-    #         # Start downloading from the root folder
-    #         download_folder_contents('root', download_dir)
-
-    #         lastDownload = datetime.now()
-    #     time.sleep(60*5)
-
-    # # print("All files and folders downloaded, verified, and cloned from Google Drive.")
-    
-    # # # # downloaded_file_path = 'DriveData\\A4A5\\data\\SKA03\\231005\\SKA03_231005_20244.csv'
-    # # # # downloaded_size = os.path.getsize(downloaded_file_path)
-    # # # # print(downloaded_size)
-    # # # delete_all_files()
-
+    print("All files downloaded successfully.")

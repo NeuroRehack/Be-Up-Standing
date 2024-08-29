@@ -38,7 +38,6 @@ class FileDownloader:
             SERVICE_ACCOUNT_CREDENTIALS, scopes=['https://www.googleapis.com/auth/drive']
         )
         self.drive_service = build('drive', 'v3', credentials=credentials)
-
         
         config = configparser.ConfigParser()
         config.read(CONFIG_FILE)
@@ -46,8 +45,6 @@ class FileDownloader:
         # Define the base directory where you want to save downloaded files
         self.download_dir = self.check_download_dir(config['DEFAULT']['DOWNLOAD_FOLDER_PATH'])
         
-        
-
         # Create UI elements
         # create a box to hold the sync button and the sync icon
         self.sync_box = tk.Frame(root)
@@ -58,7 +55,6 @@ class FileDownloader:
         
         self.sync_button = ttk.Button(root, text="Sync", command=self.start_sync)
         self.sync_button.pack(in_=self.sync_box, side=tk.LEFT, padx=10)
-        
         
         # Load icons
         scaleNum = 20
@@ -76,9 +72,8 @@ class FileDownloader:
         self.log_window = scrolledtext.ScrolledText(root, width=40, height=20, wrap=tk.WORD)
         self.log_window.pack(padx=10, pady=10, expand=True, fill=tk.BOTH)
         
-        # self.start_sync()
-
     def start_sync(self):
+        """Start the sync process."""
         internet_access = internet_available()
         if internet_access:
             """Start the sync process"""
@@ -98,13 +93,13 @@ class FileDownloader:
                 self.sync_icon_label.config(image=self.check_icon)
                 self.sync_icon_label.update_idletasks()
                 
-                
             print("Sync complete")
         else:
             # show warning message
             messagebox.showwarning("No internet connection", "Please connect to the internet to sync files")
 
     def log_message(self, message):
+        """Append a message to the log window and auto-scroll to the bottom."""
         # Append a message to the log window
         self.log_window.insert(tk.END, f"{message}\n")
         self.log_window.yview(tk.END)  # Auto-scroll to the bottom
@@ -117,11 +112,11 @@ class FileDownloader:
         List the folder structure of Google Drive and return it as a JSON structure.
 
         Args:
-        - service: The initialized Google Drive API service.
-        - folder_id: The ID of the folder to start listing from (default is 'root' for the root folder).
-
+            service (googleapiclient.discovery.Resource): The Google Drive API service
+            folder_id (str): The ID of the folder to list
+            
         Returns:
-        - A JSON structure representing the folder structure.
+            folder_structure (list): A list containing the folder structure
         """
         results = service.files().list(q=f"'{folder_id}' in parents", pageSize=1000).execute()
         items = results.get('files', [])
