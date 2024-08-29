@@ -257,6 +257,14 @@ def compute_sitting_and_standing(data_frame):
     return data_frame
 
 def get_sitting_and_standing_percentage(data_frame):
+    """Summary: This function computes the percentage of time the person is sitting and standing for each day
+    
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the sitting and standing percentage from
+        
+    Returns:
+        dict: A dictionary with dates as keys and tuples of sitting and standing percentages as values
+    """
     data_frame = data_frame[data_frame['Human Present'] == True].copy()
     if data_frame.empty:
         return {}
@@ -283,7 +291,14 @@ def get_sitting_and_standing_percentage(data_frame):
     return standing_time_dict
 
 def get_sit_stand_transitions(data_frame):
-        #return dictionary of transitions {"TransitionToUP": [datetime], "TransitionToDown": [datetime]}
+    """Summary: This function computes the sit to stand transitions and stand to sit transitions in the data frame
+    
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the transitions from
+        
+    Returns:
+        dict: A dictionary of transitions with keys 'TransitionToUP' and 'TransitionToDown' that contain lists of datetime objects
+    """
     transitions = {}
     transitionToUpList = data_frame[data_frame['TransitionToUP'] == True]['Date time'].tolist()
     transitionsToDownList = data_frame[data_frame['TransitionToDown'] == True]['Date time'].tolist()
@@ -524,6 +539,14 @@ def compute_present_to_absent_transitions(data_frame):
     return data_frame
 
 def compute_present_to_absent(data_frame):
+    """ Summary: This function computes the present to absent and absent to present transitions in the data frame
+
+    Args:
+        data_frame (pandas.DataFrame): The data frame to compute the transitions from
+        
+    Returns:
+        pandas.DataFrame: The data frame with the new columns 'PresentToAbsent' and 'AbsentToPresent'
+    """
     data_frame = data_frame.copy()
     # add a new column 'PresentToAbsent' that is True if 'Human Present' has changed compared to the previous row
     data_frame['PresentToAbsent'] = (data_frame['Human Present'].ne(data_frame['Human Present'].shift())) & (data_frame['Human Present'] == False)
@@ -547,9 +570,6 @@ def compute_bouts(transition, presenceTransition):
     Returns:
         dict: A dictionary with dates as keys and a dictionary of bouts with keys 'Sitting' and 'Standing' as values
     """
-    # a bout is a period of time where the person is either sitting or standing and is present
-    # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present
-    # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
     # create a dictionarry {datetime: "TransitionToUP" or "TransitionToDown" or "PresentToAbsent" or "AbsentToPresent"}
     transitionDict = {}
     for dateTime in transition["TransitionToUP"]:
@@ -638,7 +658,7 @@ def get_present_to_absent_transitions(data_frame, minDuration = 60):
     absentToPresentList = [pair[1] for pair in presenceTransition]
     return {"PresentToAbsent": presentToAbsentList, "AbsentToPresent": absentToPresentList}
 
-def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays, bouts):
+def SummaryExport(output_dir, name, dailyTransitions, percStanding, workDays, bouts):
     """Summary: This function exports the summary data to a csv file
 
     Args:
@@ -652,7 +672,7 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
         None
     """
     summaryData =  pd.DataFrame()   
-    # add Date,Transitions,Standing as columns
+    # create the columns of the summary data and fill with NaN
     summaryData['Transitions'] = np.nan
     summaryData['Standing %'] = np.nan    
     summaryData['Start time'] = np.nan
@@ -662,7 +682,6 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
     summaryData['Number Standing Bouts 40min or more'] = np.nan
     summaryData['Average Sitting Bout Duration'] = np.nan
     summaryData['Average Standing Bout Duration'] = np.nan
-    
         
     for date, numTransitions in dailyTransitions.items():
         # add the number of transitions to the summary data
@@ -688,7 +707,7 @@ def noahSummaryExport(output_dir, name, dailyTransitions, percStanding, workDays
             if date not in dailyBouts:
                 dailyBouts[date] = {"Sitting": [], "Standing": []}
             dailyBouts[date][boutsType].append((start, end))
-    # number of sitting bouts 
+
    # compute the average duration of sitting bouts for each day
     for date, bouts in dailyBouts.items():
         cumDurationSitting = 0
@@ -754,10 +773,6 @@ def get_bouts(data_frame):
         dict: A dictionary with keys 'SittingPresent' and 'StandingPresent' that contain lists of tuples of start and end times
     """
         
-    # a bout is a period of time where the person is either sitting or standing and is present
-    # a bout starts when the person changes from sitting to standing or vice versa or when the person is absent and becomes present 
-    # a bout ends when the person changes from sitting to standing or vice versa or when the person is present and becomes absent
-
     data_frame = data_frame.copy()
     data_frame = data_frame[data_frame['Bout'] == True]
     data_frame = data_frame[data_frame['Human Present'] == True]
@@ -797,7 +812,6 @@ if __name__ == "__main__":
     [print(bout) for bout in bouts.items()]
     # [print(bout) for bout in bouts.values()]
 
-
     dailyTransitions = get_num_of_daily_transition(transition)
         
     data_frame = resample_data(data_frame, 60)
@@ -807,4 +821,4 @@ if __name__ == "__main__":
     # get name without extension from path
     name = os.path.splitext(os.path.basename(file_name))[0]
 
-    noahSummaryExport(".", name, dailyTransitions, percStanding, workDays, bouts)
+    SummaryExport(".", name, dailyTransitions, percStanding, workDays, bouts)

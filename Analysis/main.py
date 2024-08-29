@@ -1,3 +1,14 @@
+"""
+This script is the main entry point for the analysis of the Standup data. It reads the data from the Standup data files, processes the data, and generates the analysis results and plots. 
+The analysis results include the percentage of time spent sitting and standing, the number of transitions between sitting and standing, the number of transitions from present to absent, 
+and the number of bouts of sitting and standing. 
+The plots include the time series plot of the Standup data, the transitions between sitting and standing, the transitions from present to absent, 
+the bouts of sitting and standing, the workdays, the time spent at the desk, and the percentage of time spent sitting and standing.
+
+Author: Sami Kaab
+Date: 27/03/2023
+"""
+
 import os
 from datetime import datetime, timedelta
 import analysis
@@ -13,7 +24,6 @@ import tkinter as tk
 if __name__ == '__main__':
     root = tk.Tk()
     root.withdraw()
-    # input_dir = "C:\\Users\\LocalSK\\Downloads\\DPS_Merged"
     input_dir = filedialog.askdirectory(title="Select the folder containing the Standup data")
     if not input_dir:
         print("No folder selected. Exiting.")
@@ -62,7 +72,7 @@ if __name__ == '__main__':
             
             data_frame = analysis.resample_data(data_frame, 60)
             print(f"Exporting summary for {file_base}")
-            analysis.noahSummaryExport(output_dir, file_base, dailyTransitions, percStanding, workDays, bouts)
+            analysis.SummaryExport(output_dir, file_base, dailyTransitions, percStanding, workDays, bouts)
             
             print(f"Plotting figures for {file_base}")
             figures = {}
@@ -82,11 +92,6 @@ if __name__ == '__main__':
 
             print(f"Saving figures for {file_base}")
             for name, fig in tqdm(figures.items(), desc="Saving figures", dynamic_ncols=True):
-                plot_output_dir = os.path.join(output_dir, name)
-                # create a directory for each name if it does not exist
-                if not os.path.exists(plot_output_dir):
-                    os.makedirs(plot_output_dir)
-                outFile = os.path.join(plot_output_dir, f"{name}_{file_base}.html")
+                outFile = os.path.join(output_dir, f"{name}_{file_base}.html")
                 pio.write_html(fig, outFile)
     
-        

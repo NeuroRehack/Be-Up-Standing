@@ -1,4 +1,3 @@
-# a script which defines a function to convert a list of cvs files into a single parquet file
 import os
 import pandas as pd
 import pyarrow as pa 
