@@ -63,8 +63,8 @@ a web interface and can upload data to Google Drive.
 The DPS device features two ports and one switch:
 
 <p align="center">
-  <img src="./Documentation/StandUpDevice_render_front_qr.PNG" width="500">
-  <img src="./Documentation/StandUpDevice_Annotated.png" width="500">
+  <img src="./Documentation/StandUpDevice_render_front_qr.PNG" width="400">
+  <img src="./Documentation/StandUpDevice_Annotated.png" width="400">
 </p>
 
 - **USB Port**: Not currently in use.

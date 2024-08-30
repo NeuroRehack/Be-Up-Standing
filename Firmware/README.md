@@ -15,8 +15,8 @@
 Once you have all the necessary components, you can start assembling the hardware. The wiring schematic below shows how to connect the various components to the Omega2 Pro. 
 
 <p align="center">
-  <img src="../Documentation/Wiring_Diagram.png" width="400">
-  <img src="../Documentation/DPS_mechanical_drawing.png" width="690">
+  <img src="../Documentation/Wiring_Diagram.png" width="390">
+  <img src="../Documentation/DPS_mechanical_drawing.png" width="670">
 </p>
 
 You will need to 3d print a case to house the components and the frame to attach the device to the desk. The STL files can be found in the [CAD folder](../Documentation/CAD/). Make sure to print one of each of the following files:
