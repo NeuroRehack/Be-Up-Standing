@@ -125,7 +125,29 @@ slowly.
 </p>
 
 
-## Recording and Data Handling
+### Device Placement
+
+Proper placement of the Desk Positioning System (DPS) is crucial for accurate detection and measurement. Below are guidelines for placing the device in different environments:
+
+#### Accurate Detection
+- **Single Person Office:** The DPS will correctly detect the presence of the correct person when placed facing the user directly. This setup ensures that the sensor accurately detects both sitting and standing positions.
+
+#### Situations with Inaccurate Measurement
+- **Distance Measurement Issues:** When the device is placed at an angle where it cannot properly detect the distance between the table and the surface below, the DPS might still differentiate between sitting and standing, but the measurements will be less accurate.
+- **Shared Office:** In a shared office environment, the DPS may not always detect the presence of the correct person if other individuals are within the detection range. It's important to position the device carefully to minimize interference.
+- **Open Space Office:** Similar to a shared office, the DPS may not always detect the correct person in an open space office. Ensure the device's front is facing the intended user and minimize the chance of capturing passersby.
+
+#### Incorrect Detection
+- **Improper Placement:** If the DPS is placed facing away from the user or in a position where the sensor cannot accurately measure the distance to the surface, it will fail to correctly detect the user’s presence or their sitting/standing state.
+
+#### Placement Tips
+- **Orientation:** The device should be placed and oriented such that the front is facing the user, minimizing the chances of capturing passersby.
+- **Placement**: Ensure the device is positioned at an angle where the distance sensor can accurately measure the height of the desk. Avoid placing the device in a corner or behind objects that may obstruct the sensors.
+
+<p align="center">
+  <img src="./Documentation/device_placement.png" width="700">
+</p>
+## Data Handling
 
 ### Downloading the Data
 
