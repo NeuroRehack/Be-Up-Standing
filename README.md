@@ -6,7 +6,7 @@ This project aims to monitor the usage of a standing desk by measuring its heigh
 
 <p align="center">
   <img src="Documentation\StandUpDevice.png" width="400">
-  <img src="Documentation\standup_device_assembly1.gif" width="400">
+  <img src="Documentation\standup_device_assembly2.gif" width="400">
 </p>
 
 ## Features
@@ -44,8 +44,121 @@ The scripts in software can be used to navigate, download and delete data from t
 
 The data collected by the Desk Positioning System can be analyzed to understand desk usage patterns. Detailed instructions for analyzing the data are available in the [Analysis README](Analysis/README.md).
 
+## Desk Positioning System (DPS)
+
+The Desk Positioning System (DPS) was developed to measure sit-stand desk usage in real-world settings. 
+It has been created in collaboration with researchers from the School of Human Movement and Nutrition Sciences 
+and the Neuroengineering, Rehabilitation, and Medical Robotics Group at the University of Queensland.
+
+The system monitors desk height, detects human presence, and logs data for analysis. The device is managed through 
+a web interface and can upload data to Google Drive.
+
+---
+
+
+## Getting Started
+
+### Switching the Device On
+
+The DPS device features two ports and one switch:
+
+<p align="center">
+  <img src="./Documentation/StandUpDevice_render_front_qr.PNG" width="500">
+  <img src="./Documentation/StandUpDevice_Annotated.png" width="500">
+</p>
+
+- **USB Port**: Not currently in use.
+- **Micro-USB Port**: Used for charging or providing power to the device.
+- **Power Switch**: Used to turn the device on and off.
+
+To start the device, switch it on using the power switch (connect it to a power source if necessary). 
+The device should automatically start recording data.
+
+### Accessing the Dashboard
+
+To access the device’s dashboard, scan the provided QR code or enter the URL `standup-xxxx.local:5000` in your browser, replacing `xxxx` with the device's unique identifier. Ensure that the device and your computer are on the same network.
+
+The home page asks the user to choose between two profiles, the guest or admin profile. Both profiles allow the user to see the real time data and some of the devices’ parameters, and set the status LED intensity.
+
+<p align="center">
+  <img src="./Documentation/Dashboard_home.png" width="700">
+</p>
+
+
+## Device Operation
+
+Once logged in to the Admin Dashboard, you can monitor the device's parameters, start/stop recordings, and adjust settings.
+<p align="center">
+  <img src="./Documentation/Dashboard_main.png" width="700">
+</p>
+
+### Configuration
+
+The settings window allows you to customize the following parameters:
+
+- **ID**: Define a name for a recording session (e.g., `test_001`).
+- **Start/Stop Recording**: Specify the time window for active recording.
+- **Status LED Intensity**: Adjust the brightness of the status LED.
+
+Advanced settings include:
+
+- **Sampling Period**: Period between data sampling (seconds).
+- **Write Period**: Period between writing data to a file.
+- **New File Period**: Period after which a new file is created.
+- **Upload Period**: Period between attempts of uploading completed files.
+
+<p align="center">
+  <img src="./Documentation/Dashboard_Settings_Device.png" width="700">
+</p>
+
+### Recording
+
+Recording starts automatically when the device is switched on, unless it was previously turned off in a non-recording state.
+
+- **Stop Recording**: Press the “Stop Recording” button. The main LED will pulse red.
+- **Start Recording**: Press the “Start Recording” button. The LED will pulse green (and blue if connected to internet). If the current time is outside the recording
+window set in the configuration file, the colour of the LED will change to purple and pulsate more
+slowly.
+
+<p align="center">
+  <img src="./Documentation/Status_LED_Patterns.png" width="700">
+</p>
+
+
+## Recording and Data Handling
+
+### Downloading the Data
+
+Use the `drive_cloner_ui.exe` program to download data from Google Drive (see [Software README](Software/README.md) for more information). The program will sync and download the data, 
+then clear the drive. It is recommended to run this program on a single computer to avoid data loss.
+
+### Downloading Data Directly from the Device
+
+If the data has not been uploaded to Google Drive, you can download it directly from the device using [WinSCP](https://winscp.net/eng/index.php). 
+Connect your computer to the device’s Wi-Fi or the same network, then use the following credentials:
+
+- **Hostname**: `standup-xxxx.local`
+- **Username**: `root`
+- **Password**: `beupstanding` (default)
+
+<p align="center">
+  <img src="./Documentation/WinSCP_login.png" width="700">
+</p>
+
+Once the session is established the folder structure of the device is shown on the right-hand side,
+and the folder structure of your computer is shown on the left-hand side. On the device navigate to
+the Firmware folder and on the computer navigate to where you would like to download the data to.
+On the computer create a folder which name is the ID of the device. You can then simply select the
+“data” folder on the device side and drag it to the created folder on the computer side to copy it.
+
+<p align="center">
+  <img src="./Documentation/WinSCP_session.png" width="700">
+</p>
+
+---
 ## License
 
 This project is licensed under the GNU General Public License. You may redistribute and/or modify it under the terms of the [GPL version 3](https://www.gnu.org/licenses/gpl-3.0.html) (or any later version) as published by the Free Software Foundation.
 
 For more details, see the [LICENSE](LICENSE) file.
+

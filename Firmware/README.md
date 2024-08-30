@@ -16,13 +16,16 @@ Once you have all the necessary components, you can start assembling the hardwar
 
 <p align="center">
   <img src="../Documentation/Wiring_Diagram.png" width="400">
+  <img src="../Documentation/DPS_mechanical_drawing.png" width="690">
 </p>
 
 You will need to 3d print a case to house the components and the frame to attach the device to the desk. The STL files can be found in the [CAD folder](../Documentation/CAD/). Make sure to print one of each of the following files:
-- [Case part 1](../Documentation/CAD/case_bottom.obj)
-- [Case part 2](../Documentation/CAD/case_top.obj)
-- [Frame part 1](../Documentation/CAD/table_attachment.obj)
-- [Frame part 2](../Documentation/CAD/table_attachment2.obj)
+- [Case Bottom](../Documentation/CAD/case_bottom.obj)
+- [Case Top](../Documentation/CAD/case_top.obj)
+- [Frame](../Documentation/CAD/frame.obj)
+- [Clamping Part](../Documentation/CAD/clamping_part.obj)
+  
+
 ## Setting up the Omega2 Pro
 The Omega2 Pro is a headless device, meaning that it does not have a screen or keyboard. In order to set it up you need to connect it to a computer using a micro USB cable and connect to it using a serial terminal.
 The device requires internet access in order to install the necessary packages.
