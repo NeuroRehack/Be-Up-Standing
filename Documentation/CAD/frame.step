@@ -9,8 +9,8 @@ FILE_DESCRIPTION(
 /* implementation_level */ '2;1');
 
 FILE_NAME(
-/* name */ 'table_attachment.step',
-/* time_stamp */ '2024-07-18T17:24:50+10:00',
+/* name */ 'Frame.step',
+/* time_stamp */ '2024-08-30T13:08:43+10:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v20',
@@ -3427,17 +3427,15 @@ SOLID_ANGLE_UNIT()
 #3334=PRODUCT_DEFINITION_SHAPE('',$,#3337);
 #3335=SHAPE_REPRESENTATION('',(#1959),#3327);
 #3336=PRODUCT_DEFINITION_CONTEXT('part definition',#3341,'design');
-#3337=PRODUCT_DEFINITION('Table attachment','Table attachment v38',#3338,
-#3336);
+#3337=PRODUCT_DEFINITION('Frame','Frame v43',#3338,#3336);
 #3338=PRODUCT_DEFINITION_FORMATION('',$,#3343);
-#3339=PRODUCT_RELATED_PRODUCT_CATEGORY('Table attachment v38',
-'Table attachment v38',(#3343));
+#3339=PRODUCT_RELATED_PRODUCT_CATEGORY('Frame v43','Frame v43',(#3343));
 #3340=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#3341);
 #3341=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #3342=PRODUCT_CONTEXT('part definition',#3341,'mechanical');
-#3343=PRODUCT('Table attachment','Table attachment v38',$,(#3342));
+#3343=PRODUCT('Frame','Frame v43',$,(#3342));
 #3344=PRESENTATION_STYLE_ASSIGNMENT((#3348));
 #3345=PRESENTATION_STYLE_ASSIGNMENT((#3349));
 #3346=PRESENTATION_STYLE_ASSIGNMENT((#3350));
