@@ -6,6 +6,7 @@ venv
 *.pyo
 *.pyd
 *.csv
+*.zip
 *credentials*
 build
 dist

@@ -353,8 +353,7 @@ def plot_bouts(fig, bouts):
     return fig
   
 if __name__ == "__main__":
-    fileName = "C:\\dps_out\\2009_9F56.parquet"
-    fileName = "test.parquet"
+    fileName = "output//sample.parquet"
     fileNameBase = os.path.basename(fileName).split(".")[0]
     
     # load data and clean it

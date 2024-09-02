@@ -784,7 +784,7 @@ def get_bouts(data_frame):
 
 if __name__ == "__main__":
 
-    file_name = "test.parquet"
+    file_name = "output//test.parquet"
 
     data_frame = load_from_parquet(file_name)
     data_frame = check_data(data_frame)
