@@ -147,6 +147,7 @@ Proper placement of the Desk Positioning System (DPS) is crucial for accurate de
 <p align="center">
   <img src="./Documentation/device_placement.png" width="700">
 </p>
+
 ## Data Handling
 
 ### Downloading the Data
