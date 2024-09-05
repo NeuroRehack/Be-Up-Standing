@@ -39,10 +39,10 @@ This script provides a Tkinter-based GUI application named "File Downloader" for
 ### Drive Cloner (Command Line)
 - Simply run `drive_cloner.py` to start downloading files from Google Drive to the configured local directory. The script will automatically verify file integrity and delete files from Google Drive once successfully downloaded.
 
-### Drive Cloner UI (Tkinter)
+### Drive Cloner UI
 - Launch the GUI with `drive_cloner_ui.py`. Use the buttons provided to start syncing your Google Drive content. The GUI will display progress and logs to keep you informed.
 
-### Drive UI (PySide2)
+### Drive UI
 - Start `drive_ui.py` to use the advanced interface, which allows for more granular control over your Google Drive files. You can browse, download, and delete files directly from the application.
 
 
