@@ -6,7 +6,7 @@ This project aims to monitor the usage of a standing desk by measuring its heigh
 
 <p align="center">
   <img src="Documentation\StandUpDevice.png" width="400">
-  <img src="Documentation\standup_device_assembly2.gif" width="400">
+  <img src="Documentation\standup_device_assembly.gif" width="400">
 </p>
 
 ## Features
