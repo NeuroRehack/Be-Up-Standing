@@ -38,40 +38,53 @@ You will need to 3d print a case to house the components and the frame to attach
 ## Setting up the Omega2 Pro
 The Omega2 Pro is a headless device, meaning that it cannot be accessed using a graphical user interface. In order to set it up you need to plug it to a computer using a micro USB cable and connect to it using a serial terminal. The device requires internet access in order to install the necessary packages.
 
-Once you have connected to the device using a serial terminal, you can set up the wifi using the following command:
-```sh
-wifisetup add -ssid <ssid> -encr psk2 -password <password>
-```
+- Once you have connected to the device using a serial terminal, you can set up the wifi using the following command:
+  ```sh
+  wifisetup add -ssid <ssid> -encr psk2 -password <password>
+  ```
 
-Replace ssid and password with the name and password of your wifi network.
+  Replace ssid and password with the name and password of your wifi network.
 
-You should now have internet access, which you can verify by pinging a website:
+- You should now have internet access, which you can verify by pinging a website:
 
-```sh
-ping duckduckgo.com
-```
+  ```sh
+  ping duckduckgo.com
+  ```
 
-We first need to install git and ca-bundle in order to be able to clone the repository:
-```sh
-opkg update && opkg install git git-http ca-bundle
-```
-We can now install the necessary Omega2 and python packages. Clone the Firmware folder in the repository from the root folder:
+  - We first need to install git and ca-bundle in order to be able to clone the repository:
+  ```sh
+  opkg update && opkg install git git-http ca-bundle
+  ```
+- We can now install the necessary Omega2 and python packages.
 
-```sh
-cd /root && git init && git config core.sparseCheckout true && echo Firmware/ >> .git/info/sparse-checkout 
-```
-```sh
-git remote add origin https://github.com/NeuroRehack/Desk-Positioning-System.git && git pull origin master
-```
-then navigate to the Firmware folder and run the setup script which will install the necessary packages and set up the Omega2 to run the program on startup.
-```sh
-cd /root/Firmware && source /root/Firmware/shell_scripts/set_up.sh
-```
-Next run the omega_rename script:
-```sh
-source ./shell_scripts/omega_rename.sh
-```
-This script will amongst other things change the default wifi name and password of the omega as well as the device's password.  
+  - Download the source code from the latest release of the repository to your computer. Extract the files and copy the Firmware folder to the root of the Omega2 Pro. You can do this using scp:
+  ```sh
+  scp -r /path/to/Firmware root@Omega-<XXXX>.local:/root/
+  ``` 
+  where /path/to/Firmware is the path to the Firmware folder on your computer and <XXXX> is the last four digits of the Omega2 Pro ID.
+  
+  **NOTE**: You will need to have the Omega2 Pro connected to the same network as your computer.
+
+  - **Alternatively**, you can clone the repository directly on the Omega2 Pro using git:
+
+  ```sh
+  cd /root && git init && git config core.sparseCheckout true && echo Firmware/ >> .git/info/sparse-checkout 
+  ```
+  ```sh
+  git remote add origin https://github.com/NeuroRehack/Desk-Positioning-System.git && git pull origin master
+  ```
+
+- then navigate to the Firmware folder and run the setup script which will install the necessary packages and set up the Omega2 to run the program on startup.
+  ```sh
+  cd /root/Firmware && source /root/Firmware/shell_scripts/set_up.sh
+  ```
+  depending on the internet connection the setup might take a while. Once it is done you will need to reboot the device using ```reboot```.
+- Next run the omega_rename script:
+  ```sh
+  source ./shell_scripts/omega_rename.sh
+  ```
+  This script will amongst other things change the default wifi name and password of the omega as well as the device's password.
+
 The device should now be ready for use. Just restart it using ```reboot``` and it should start running the program on startup.
 
 ## Setting up a google drive API
