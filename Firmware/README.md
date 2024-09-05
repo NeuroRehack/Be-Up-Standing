@@ -10,6 +10,14 @@
 - 5 x Male to Female Jumper wires
 - 2 x Male to QWIIC Jumper wires (4-pin)
 - USB A to micro USB cable
+- M3 Nylon 16mm screws and nuts
+
+## Required equipment
+- 3D printer
+- Soldering iron
+- Hot glue gun (optional)
+- Computer
+- Internet connection
 
 ## Hardware setup
 Once you have all the necessary components, you can start assembling the hardware. The wiring schematic below shows how to connect the various components to the Omega2 Pro. 
@@ -17,6 +25,7 @@ Once you have all the necessary components, you can start assembling the hardwar
 <p align="center">
   <img src="../Documentation/Wiring_Diagram.png" width="390">
   <img src="../Documentation/DPS_mechanical_drawing.png" width="670">
+  <img src="../Documentation/DPS_frame_mechanical_drawing.png" width="670">
 </p>
 
 You will need to 3d print a case to house the components and the frame to attach the device to the desk. The STL files can be found in the [CAD folder](../Documentation/CAD/). Make sure to print one of each of the following files:
@@ -27,14 +36,15 @@ You will need to 3d print a case to house the components and the frame to attach
   
 
 ## Setting up the Omega2 Pro
-The Omega2 Pro is a headless device, meaning that it does not have a screen or keyboard. In order to set it up you need to connect it to a computer using a micro USB cable and connect to it using a serial terminal.
-The device requires internet access in order to install the necessary packages.
+The Omega2 Pro is a headless device, meaning that it cannot be accessed using a graphical user interface. In order to set it up you need to plug it to a computer using a micro USB cable and connect to it using a serial terminal. The device requires internet access in order to install the necessary packages.
 
+Once you have connected to the device using a serial terminal, you can set up the wifi using the following command:
 ```sh
 wifisetup add -ssid <ssid> -encr psk2 -password <password>
 ```
 
 Replace ssid and password with the name and password of your wifi network.
+
 You should now have internet access, which you can verify by pinging a website:
 
 ```sh
