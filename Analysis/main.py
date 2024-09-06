@@ -1,8 +1,8 @@
 """
-This script is the main entry point for the analysis of the Standup data. It reads the data from the Standup data files, processes the data, and generates the analysis results and plots. 
+This script is the main entry point for the analysis of the data. It processes the data, and generates the analysis results and plots. 
 The analysis results include the percentage of time spent sitting and standing, the number of transitions between sitting and standing, the number of transitions from present to absent, 
 and the number of bouts of sitting and standing. 
-The plots include the time series plot of the Standup data, the transitions between sitting and standing, the transitions from present to absent, 
+The plots include the time series plot of the  data, the transitions between sitting and standing, the transitions from present to absent, 
 the bouts of sitting and standing, the workdays, the time spent at the desk, and the percentage of time spent sitting and standing.
 
 Author: Sami Kaab

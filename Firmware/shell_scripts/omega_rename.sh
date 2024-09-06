@@ -8,7 +8,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 old_name="Omega-"  # Specify the prefix of the old hostname
-new_name="standup"  # Specify the new hostname prefix
+new_name="dps"  # Specify the new hostname prefix
 
 # Find the line with the hostname and extract the ID
 id=$(grep "option hostname" /etc/config/system | awk -F"'" '{print $2}' | awk -F"${old_name}" '{print $2}')
@@ -54,6 +54,6 @@ echo "Wifi name changed to ${new_name}-${id}"
 # # # echo "Wifi password changed"
 
 # change the Omega root password
-echo -e beupstanding\\nbeupstanding | passwd
+echo -e dps12345678\\ndps12345678 | passwd
 
 # /etc/init.d/network restart

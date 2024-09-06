@@ -1,5 +1,5 @@
 """
-This script is used to plot the standup data from the data frame between the start and end datetime
+This script is used to plot the data between the start and end datetime
 
 Author: Sami Kaab
 Date: 5/12/2023
