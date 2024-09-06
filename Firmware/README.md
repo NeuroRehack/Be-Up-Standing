@@ -85,6 +85,12 @@ The Omega2 Pro is a headless device, meaning that it cannot be accessed using a 
   cd /root/Firmware && source /root/Firmware/shell_scripts/set_up.sh
   ```
   depending on the internet connection the setup might take a while. Once it is done you will need to reboot the device using ```reboot```.
+
+- It is a good idea now to check that the sensors have been wired and are working correctly. You can do this by running the test script:
+  ```sh
+   source /root/Firmware/shell_scripts/run_test.sh 
+  ```
+
 - Next run the omega_rename script:
   ```sh
   source ./shell_scripts/omega_rename.sh
