@@ -6,12 +6,17 @@ This project provides a set of Python scripts and user interfaces to interact wi
 ## Scripts Overview
 
 ### 1. `drive_cloner.py`
+
 This script interacts with Google Drive via the Google Drive API to manage files and folders. Given a folder ID, the script lists all files and folders within the specified folder, and based on their MIME types, downloads them to a local directory. If a folder is empty and is not the root, it deletes the folder from Google Drive. After downloading, it checks the integrity of the download using an MD5 hash and deletes the source file from Google Drive if the integrity check passes. The script also provides utility functions for listing and printing the folder structure in Google Drive, as well as deleting all files.
 
 ### 2. `drive_cloner_ui.py`
+<img src="../Documentation/drive_cloner_ui.png" width="400">
+
 This script provides a Tkinter-based GUI application named "File Downloader" for downloading files from Google Drive. It allows users to specify a local directory to download files to, and it keeps the local directory synced with Google Drive by downloading files and removing them from Google Drive once successfully downloaded. The user can monitor progress and messages through a scrollable log window within the application interface.
 
 ### 3. `drive_ui.py`
+<img src="../Documentation/drive_ui.png" width="400">
+
  This script utilizes PySide2 to create a graphical user interface (GUI) application for interacting with Google Drive. The application enables users to browse, download, and delete files and folders in their Google Drive. The application is particularly equipped to handle these tasks while displaying progress and alerting users through a UI.
 
 ## Installation
