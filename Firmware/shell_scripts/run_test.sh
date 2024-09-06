@@ -1,9 +1,12 @@
-# NOT IN USE
-
 #!/bin/ash
 source /root/Firmware/venv/bin/activate
 
-output=$(python /root/Firmware/test_programs/rtc_test.py 2>&1)
+cp /root/Firmware/test_programs/rtc_test.py /root/Firmware/test.py
+python -u /root/Firmware/test.py 2>&1 | while IFS= read -r line; do
+    echo "$line"
+    # Append the line to a variable for checking after completion
+    output="$output$line"$'\n'
+done
 
 # Check the output to determine if the sensor is working
 if echo "$output" | grep -q "OK"; then
@@ -12,20 +15,31 @@ else
     echo "RTC test: failed"
 fi
 
-output=$(python /root/Firmware/test_programs/hdp_test.py 2>&1)
+cp /root/Firmware/test_programs/hdp_test.py /root/Firmware/test.py
+python -u /root/Firmware/test.py 2>&1 | while IFS= read -r line; do
+    echo "$line"
+    # Append the line to a variable for checking after completion
+    output="$output$line"$'\n'
+done
 
 # Check the output to determine if the sensor is working
 if echo "$output" | grep -q "OK"; then
-    echo "hdp test: passed"
+    echo "HDP test: passed"
 else
-    echo "hdp test: failed"
+    echo "HDP test: failed"
 fi
 
-output=$(python /root/Firmware/test_programs/laser_distance_test.py 2>&1)
+cp /root/Firmware/test_programs/laser_distance_test.py /root/Firmware/test.py
+python -u /root/Firmware/test.py 2>&1 | while IFS= read -r line; do
+    echo "$line"
+    # Append the line to a variable for checking after completion
+    output="$output$line"$'\n'
+done
 
 # Check the output to determine if the sensor is working
 if echo "$output" | grep -q "OK"; then
-    echo "distance test: passed"
+    echo "Laser distance test: passed"
 else
-    echo "distance test: failed"
+    echo "Laser distance test: failed"
 fi
+rm /root/Firmware/test.py
