@@ -52,8 +52,15 @@ The `analysis.py` script contains functions that perform the core data analysis 
 ### 5. plot_standup_data.py
 The `plot_standup_data.py` script is a standalone script that generates time series plots of standup data for a specified date range. It allows users to visualize the distance measurements and human presence data over time.
  
-
-
+## Setup and Dependencies
+The data analysis scripts are written in Python. it is recommended to use a virtual environment to manage the dependencies. To create a virtual environment, run the following command:
+```bash
+python -m venv venv
+```
+to install the required dependencies, run the following command:
+```bash
+pip install -r requirements.txt
+```
 
 ## Data Analysis Workflow 
 <p align="center">
