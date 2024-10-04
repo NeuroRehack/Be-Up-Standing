@@ -76,9 +76,9 @@ The device should automatically start recording data.
 
 ### Accessing the Dashboard
 
-To access the device’s dashboard, scan the provided QR code or enter the URL `standup-xxxx.local:5000` in your browser, replacing `xxxx` with the device's unique identifier. Ensure that the device and your computer are on the same network.
+To access the device’s dashboard, scan the provided QR code or enter the URL `dps-xxxx.local:5000` in your browser, replacing `xxxx` with the device's unique identifier. Ensure that the device and your computer are on the same network.
 
-The home page asks the user to choose between two profiles, the guest or admin profile. Both profiles allow the user to see the real time data and some of the devices’ parameters, and set the status LED intensity.
+The home page asks the user to choose between two profiles, the guest or admin profile (default password : dps12345678). Both profiles allow the user to see the real time data and some of the devices’ parameters, and set the status LED intensity.
 
 <p align="center">
   <img src="./Documentation/Dashboard_home.png" width="700">
